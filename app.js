@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import db from './models/index.js';
+import dishRoutes from './routes/canteen.js'
 // import {serveSwagger, setupSwagger} from "./config/swagger.js";
 
 
@@ -20,6 +21,7 @@ app.use(express.json());
 
 // Routes
 
+app.use('/api/dishes',dishRoutes);
 
 app.get('/', (req, res) => {
     res.send('Expense Tracker API');
