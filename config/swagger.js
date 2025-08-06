@@ -5,9 +5,9 @@ const options = {
     definition: {
         openapi: '3.0.0',
         info: {
-            title: 'Expense Tracker API',
+            title: 'Meal Voting API',
             version: '1.0.0',
-            description: 'API for expense tracker',
+            description: 'API for managing meal voting system',
         },
         components: {
             securitySchemes: {
