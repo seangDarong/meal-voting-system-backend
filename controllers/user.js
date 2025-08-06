@@ -140,6 +140,10 @@ export const login = async (req, res) => {
     }
 };
 
+export const signOut = (req, res) => {
+    res.json({ message: 'Sign out successful' });
+};
+
 export const requestPasswordReset = async (req, res) => {
     try {
         const { email } = req.body;
@@ -269,6 +273,83 @@ export const resetPasswordWithToken = async (req, res) => {
 
     } catch (error) {
         console.error('Password reset error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error. Please try again later.'
+        });
+    }
+};
+
+export const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user.id; // From JWT middleware
+
+        // Validate input
+        if (!currentPassword) {
+            return res.status(400).json({
+                success: false,
+                error: 'Current password is required'
+            });
+        }
+
+        if (!newPassword) {
+            return res.status(400).json({
+                success: false,
+                error: 'New password is required'
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                error: 'New password must be at least 6 characters long'
+            });
+        }
+
+        // Check if new password is different from current password
+        const isSamePassword = await bcrypt.compare(newPassword, req.user.password || '');
+        if (isSamePassword) {
+            return res.status(400).json({
+                success: false,
+                error: 'New password must be different from current password'
+            });
+        }
+
+        // Find the user
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        // Verify current password
+        const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isCurrentPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                error: 'Current password is incorrect'
+            });
+        }
+
+        // Hash new password
+        const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password in database
+        user.password = hashedNewPassword;
+        await user.save();
+
+        console.log(`Password successfully changed for user: ${user.email}`);
+
+        res.status(200).json({
+            success: true,
+            message: 'Password changed successfully'
+        });
+
+    } catch (error) {
+        console.error('Change password error:', error);
         res.status(500).json({
             success: false,
             error: 'Internal server error. Please try again later.'
