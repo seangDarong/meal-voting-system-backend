@@ -8,6 +8,8 @@ import { register,
     requestPasswordReset,
     changePassword} from '../controllers/user.js';
 
+import { authenticateToken } from '../middlewares/auth.js';
+
 const router = express.Router();
 
 /**
@@ -116,6 +118,6 @@ router.post('/resend-verification', resendVerification);
 router.post('/signout', signOut);
 router.post('/request-password-reset', requestPasswordReset);
 router.post('/reset-password', resetPasswordWithToken);
-router.post('/change-password', changePassword);
+router.post('/change-password', authenticateToken, changePassword);
 
 export default router;

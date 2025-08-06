@@ -1,4 +1,8 @@
 {
+  "name": "meal-voting-system-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
   "type": "module",
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -19,10 +23,6 @@
     "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0"
   },
-  "name": "meal-voting-system-backend",
-  "version": "1.0.0",
-  "description": "",
-  "main": "app.js",
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -36,7 +36,6 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/seangDarong/meal-voting-system-backend/issues"
   },
