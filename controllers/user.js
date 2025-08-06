@@ -4,7 +4,9 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import { Op } from 'sequelize';
-import { sendVerificationEmail } from '../utils/emailService.js';
+import { sendVerificationEmail,
+        sendPasswordResetEmail
+        } from '../utils/emailService.js';
 
 const User = db.User;
 
@@ -135,5 +137,141 @@ export const login = async (req, res) => {
         res.json({ message: 'Login successful', token });
     } catch (error) {
         res.status(500).json({ error: 'Error logging in' });
+    }
+};
+
+export const requestPasswordReset = async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        // Validate input
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                error: 'Email is required'
+            });
+        }
+        if (!validateSchoolEmail(email)) {
+            return res.status(400).json({
+                success: false,
+                error: 'Only school email are allowed'
+            });
+        }
+
+        // Find user by email
+        const user = await User.findOne({ where: { email: email } });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'No account found with this email address'
+            });
+        }
+
+        // Generate secure reset token
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const resetTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        // Store token in database
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpires = resetTokenExpires;
+        await user.save();
+
+        // Send password reset email
+        try {
+            await sendPasswordResetEmail(user.email, resetToken);
+            console.log(`Password reset email sent to: ${user.email}`);
+        } catch (emailError) {
+            console.error('Failed to send password reset email:', emailError);
+            
+            // Clear the token if email fails
+            user.resetPasswordToken = null;
+            user.resetPasswordExpires = null;
+            await user.save();
+            
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to send password reset email. Please try again.'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Password reset email sent successfully. Please check your email.'
+        });
+
+    } catch (error) {
+        console.error('Password reset request error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error. Please try again later.'
+        });
+    }
+};
+
+export const resetPasswordWithToken = async (req, res) => {
+    try {
+        const { token } = req.query;
+        const { newPassword } = req.body;
+
+        // Validate input
+        if (!token) {
+            return res.status(400).json({
+                success: false,
+                error: 'Reset token is required'
+            });
+        }
+
+        if (!newPassword) {
+            return res.status(400).json({
+                success: false,
+                error: 'New password is required'
+            });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                error: 'Password must be at least 6 characters long'
+            });
+        }
+
+        // Find user with valid token
+        const user = await User.findOne({
+            where: {
+                resetPasswordToken: token,
+                resetPasswordExpires: { [Op.gt]: new Date() } // Token not expired
+            }
+        });
+
+        if (!user) {
+            return res.status(403).json({
+                success: false,
+                error: 'Invalid or expired reset token'
+            });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password and invalidate token
+        user.password = hashedPassword;
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+
+        console.log(`Password successfully reset for user: ${user.email}`);
+
+        res.status(200).json({
+            success: true,
+            message: 'Password reset successful. You can now log in with your new password.'
+        });
+
+    } catch (error) {
+        console.error('Password reset error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error. Please try again later.'
+        });
     }
 };

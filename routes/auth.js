@@ -1,5 +1,10 @@
 import express from 'express';
-import { register, login, verifyEmail, resendVerification } from '../controllers/user.js';
+import { register,
+    login,
+    verifyEmail, 
+    resendVerification, 
+    resetPasswordWithToken, 
+    requestPasswordReset} from '../controllers/user.js';
 
 const router = express.Router();
 
@@ -106,5 +111,8 @@ router.get('/verify-email', verifyEmail);
  *         description: User not found
  */
 router.post('/resend-verification', resendVerification);
+
+router.post('/request-password-reset', requestPasswordReset);
+router.post('/reset-password', resetPasswordWithToken);
 
 export default router;
