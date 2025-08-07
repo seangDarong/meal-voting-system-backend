@@ -7,6 +7,8 @@ import dishRoutes from './routes/canteen.js'
 import authRoutes from './routes/auth.js';
 import {serveSwagger, setupSwagger} from "./config/swagger.js";
 import categoryRoutes from './routes/category.js'
+import adminRoutes from './routes/admin.js';
+
 
 
 
@@ -26,7 +28,12 @@ app.use('/docs', serveSwagger, setupSwagger);
 
 app.use('/api/dishes',dishRoutes);
 app.use('/api/auth', authRoutes);
+
 app.use('/api/categories', categoryRoutes)
+
+app.use('/api/admin', adminRoutes);
+
+
 
 app.get('/', (req, res) => {
     res.send('Meal Voting API');
