@@ -251,3 +251,116 @@ export const deactivateUser = async (req, res) => {
         });
     }
 };
+
+export const reactivateUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Validate input
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                error: 'User ID is required'
+            });
+        }
+
+        // Find the user to reactivate
+        const userToReactivate = await User.findByPk(id);
+        if (!userToReactivate) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        // Check if user is already active
+        if (userToReactivate.isActive) {
+            return res.status(400).json({
+                success: false,
+                error: 'User account is already active'
+            });
+        }
+
+        // Only allow reactivation of admin/staff accounts (voters should use email verification)
+        if (userToReactivate.role === 'voter') {
+            return res.status(400).json({
+                success: false,
+                error: 'Voter accounts must be reactivated through email verification during registration.'
+            });
+        }
+
+        // Reactivate the user
+        userToReactivate.isActive = true;
+        await userToReactivate.save();
+
+        // Log the action
+        console.log(`Admin ${req.user.email} (ID: ${req.user.id}) reactivated ${userToReactivate.role} user ${userToReactivate.email} (ID: ${userToReactivate.id})`);
+
+        res.status(200).json({
+            success: true,
+            message: `${userToReactivate.role.charAt(0).toUpperCase() + userToReactivate.role.slice(1)} account has been reactivated successfully`,
+            data: {
+                reactivatedUser: {
+                    id: userToReactivate.id,
+                    email: userToReactivate.email,
+                    role: userToReactivate.role,
+                    isActive: userToReactivate.isActive
+                },
+                reactivatedBy: {
+                    id: req.user.id,
+                    email: req.user.email
+                },
+                reactivatedAt: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error('Reactivate user error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error. Please try again later.'
+        });
+    }
+};
+
+export const getAllUsers = async (req, res) => {
+    try {
+        const { includeInactive, role } = req.query;
+
+        // Build query conditions
+        const whereCondition = {};
+        if (includeInactive !== 'true') {
+            whereCondition.isActive = true;
+        }
+        if (role && ['admin', 'staff', 'voter'].includes(role)) {
+            whereCondition.role = role;
+        }
+
+        // Get all users except passwords
+        const users = await User.findAll({
+            where: whereCondition,
+            attributes: ['id', 'email', 'role', 'isVerified', 'isActive', 'createdAt', 'updatedAt'],
+            order: [['createdAt', 'DESC']]
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Users retrieved successfully',
+            data: {
+                users,
+                total: users.length,
+                filters: {
+                    includeInactive: includeInactive === 'true',
+                    role: role || 'all'
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Get all users error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error. Please try again later.'
+        });
+    }
+};

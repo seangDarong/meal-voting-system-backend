@@ -2,7 +2,6 @@ import db from '../models/index.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
 import { Op } from 'sequelize';
 import { sendVerificationEmail,
         sendPasswordResetEmail
@@ -32,12 +31,29 @@ export const verifyEmail = async (req, res) => {
             });
         }
 
+        // Update user verification status
         user.isVerified = true;
         user.verificationToken = null;
         user.verificationExpires = null;
-        await user.save();
 
-        res.status(200).json({ message: 'Email verified successfully' });
+        // If this is a voter account that was deactivated, reactivate it
+        if (user.role === 'voter' && !user.isActive) {
+            user.isActive = true;
+            await user.save();
+            
+            console.log(`Voter account reactivated for: ${user.email}`);
+            
+            return res.status(200).json({ 
+                message: 'Email verified successfully and account reactivated! You can now log in.',
+                reactivated: true
+            });
+        } else {
+            await user.save();
+            return res.status(200).json({ 
+                message: 'Email verified successfully' 
+            });
+        }
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error verifying email' });
@@ -81,14 +97,60 @@ export const register = async (req, res) => {
         if (password.length < 6) {
             return res.status(400).json({ error: 'Password must be at least 6 characters long' });
         }
-        const existingUser = await User.findOne({ where: { email } });
-        if (existingUser) {
-            return res.status(409).json({ error: 'Email already in use' });
-        }
+
         if (!validateSchoolEmail(email)) {
             return res.status(400).json({ error:'Only school email are allowed' });
         }
 
+        // Check if user already exists
+        const existingUser = await User.findOne({ where: { email } });
+        
+        if (existingUser) {
+            // FIXED: Check if user is deactivated FIRST, regardless of verification status
+            if (!existingUser.isActive) {
+                // User is deactivated - handle based on role
+                if (existingUser.role === 'voter') {
+                    // For voters: Allow re-registration with new verification
+                    const hashedPassword = await bcrypt.hash(password, 10);
+                    const verificationToken = crypto.randomBytes(32).toString('hex');
+
+                    // Update the existing deactivated voter account
+                    existingUser.password = hashedPassword;
+                    existingUser.verificationToken = verificationToken;
+                    existingUser.verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+                    existingUser.isVerified = false;
+                    // Keep isActive = false until email verification
+                    await existingUser.save();
+
+                    // Send verification email with reactivation flag
+                    await sendVerificationEmail(email, verificationToken, true); // true = isReactivation
+
+                    return res.status(201).json({ 
+                        message: 'Your previous account was deactivated. A new verification email has been sent. Please verify your email to reactivate your account.',
+                        reactivation: true
+                    });
+                } else {
+                    // For admin/staff: Require admin intervention
+                    return res.status(403).json({ 
+                        error: 'Your account has been deactivated. Please contact an administrator to reactivate your account.',
+                        role: existingUser.role,
+                        contactAdmin: true
+                    });
+                }
+            } else if (existingUser.isActive) {
+                // User is active - check verification status
+                if (existingUser.isVerified) {
+                    return res.status(409).json({ error: 'Email already in use' });
+                } else {
+                    return res.status(409).json({ 
+                        error: 'Email already registered. Please check your email for verification instructions or request a new verification email.',
+                        needsVerification: true
+                    });
+                }
+            }
+        }
+
+        // New user registration
         const hashedPassword = await bcrypt.hash(password, 10);
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
@@ -97,17 +159,18 @@ export const register = async (req, res) => {
             password: hashedPassword,
             verificationToken,
             verificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-            isVerified: false
+            isVerified: false,
+            role: 'voter' // Default role for registration
         });
 
         // Send verification email
-        await sendVerificationEmail(email, verificationToken);
+        await sendVerificationEmail(email, verificationToken, false); // false = not reactivation
 
         res.status(201).json({ 
             message: 'Registration successful! Please check your email to verify your account.'
         });
     } catch (error) {
-        console.error(error);
+        console.error('Registration error:', error);
         res.status(500).json({ error: 'Error registering user' });
     }
 };

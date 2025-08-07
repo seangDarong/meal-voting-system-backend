@@ -22,41 +22,64 @@ transporter.verify(function(error, success) {
     }
 });
 
-export const sendVerificationEmail = async (email, token) => {
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+export const sendVerificationEmail = async (email, token, isReactivation = false) => {
+    const verificationUrl = `${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/verify-email?token=${token}`;
+    
+    const subject = isReactivation ? 
+        'Reactivate Your Account - Meal Voting System' : 
+        'Verify Your Email Address - Meal Voting System';
+    
+    const title = isReactivation ? 
+        'Account Reactivation' : 
+        'Registration Verification';
+    
+    const message = isReactivation ? 
+        'Your account was deactivated. Click the link below to verify your email and reactivate your account:' :
+        'Please click the link below to verify your email address:';
     
     const mailOptions = {
         from: process.env.EMAIL_USERNAME,
         to: email,
-        subject: 'Verify Your Email Address',
+        subject: subject,
         html: `
-            <h1>Registration Verification</h1>
-            <p>Please click the link below to verify your email address:</p>
-            <table role="presentation" border="0" cellspacing="0" cellpadding="0">
-              <tr>
-                <td bgcolor="#429818" align="center" style="border-radius: 4px;">
-                  <a href="${verificationUrl}"
-                     target="_blank"
-                     style="font-size: 16px; font-family: sans-serif; color: #ffffff; text-decoration: none; padding: 12px 24px; display: inline-block;">
-                    Verify Email
-                  </a>
-                </td>
-              </tr>
-            </table>
-            <p>This link will expire in 24 hours.</p>
-            <p>If you did not create an account, please ignore this email.</p>
+            <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; padding: 20px;">
+                <h2 style="color: #429818; text-align: center;">${title}</h2>
+                <p>Hello,</p>
+                <p>${message}</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <table role="presentation" border="0" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+                        <tr>
+                            <td bgcolor="#429818" align="center" style="border-radius: 6px;">
+                                <a href="${verificationUrl}"
+                                   target="_blank"
+                                   style="font-size: 16px; font-family: Arial, sans-serif; color: #ffffff; text-decoration: none; padding: 14px 28px; display: inline-block; border-radius: 6px;">
+                                    ${isReactivation ? 'Reactivate Account' : 'Verify Email'}
+                                </a>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <p>This link will expire in 24 hours.</p>
+                ${isReactivation ? 
+                    '<p><strong>Note:</strong> After verification, your account will be reactivated and you can log in normally.</p>' : 
+                    '<p>If you did not create an account, please ignore this email.</p>'
+                }
+            </div>
         `
     };
 
     try {
-        await transporter.sendMail(mailOptions);
-        console.log('Verification email sent successfully to:', email);
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`${isReactivation ? 'Reactivation' : 'Verification'} email sent successfully to:`, email);
+        return { success: true, messageId: info.messageId };
     } catch (error) {
         console.error('Error sending email:', error);
         if (error.code === 'EAUTH') {
             throw new Error('Email authentication failed. Please check your email credentials.');
         }
-        throw new Error('Failed to send verification email');
+        throw new Error(`Failed to send ${isReactivation ? 'reactivation' : 'verification'} email`);
     }
 };
 
