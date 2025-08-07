@@ -6,7 +6,9 @@ import { register,
     resendVerification, 
     resetPasswordWithToken, 
     requestPasswordReset,
-    changePassword} from '../controllers/user.js';
+    changePassword,
+    deactivateOwnAccount,
+    getOwnProfile} from '../controllers/user.js';
 
 import { authenticateToken } from '../middlewares/auth.js';
 
@@ -119,5 +121,7 @@ router.post('/signout', signOut);
 router.post('/request-password-reset', requestPasswordReset);
 router.post('/reset-password', resetPasswordWithToken);
 router.post('/change-password', authenticateToken, changePassword);
+router.get('/profile', authenticateToken, getOwnProfile);
+router.post('/deactivate-account', authenticateToken, deactivateOwnAccount);
 
 export default router;

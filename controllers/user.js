@@ -428,3 +428,112 @@ export const changePassword = async (req, res) => {
         });
     }
 };
+
+// Add this to the end of your user.js controller file
+
+export const deactivateOwnAccount = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { confirmPassword } = req.body;
+
+        // Validate input - require password confirmation for security
+        if (!confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                error: 'Password confirmation is required to deactivate your account'
+            });
+        }
+
+        // Find the user
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        // Check if user is already deactivated
+        if (!user.isActive) {
+            return res.status(400).json({
+                success: false,
+                error: 'Your account is already deactivated'
+            });
+        }
+
+        // Verify password for security
+        const isPasswordValid = await bcrypt.compare(confirmPassword, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                error: 'Incorrect password. Account deactivation cancelled.'
+            });
+        }
+
+        // Only allow voters to deactivate their own accounts
+        // Admin/staff should contact admin for deactivation
+        if (user.role !== 'voter') {
+            return res.status(403).json({
+                success: false,
+                error: 'Only voter accounts can be self-deactivated. Please contact an administrator for assistance.',
+                contactAdmin: true
+            });
+        }
+
+        // Deactivate the account
+        user.isActive = false;
+        await user.save();
+
+        // Log the action
+        console.log(`User ${user.email} (ID: ${user.id}) self-deactivated their account`);
+
+        res.status(200).json({
+            success: true,
+            message: 'Your account has been deactivated successfully. You can reactivate it by registering again with the same email.',
+            data: {
+                deactivatedAt: new Date().toISOString(),
+                reactivationInfo: 'To reactivate your account, simply register again with the same email address and verify your email.'
+            }
+        });
+
+    } catch (error) {
+        console.error('Self-deactivate account error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error. Please try again later.'
+        });
+    }
+};
+
+export const getOwnProfile = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Find the user and exclude sensitive information
+        const user = await User.findByPk(userId, {
+            attributes: ['id', 'email', 'role', 'isVerified', 'isActive', 'createdAt', 'updatedAt']
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile retrieved successfully',
+            data: {
+                user: user
+            }
+        });
+
+    } catch (error) {
+        console.error('Get profile error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error. Please try again later.'
+        });
+    }
+};
