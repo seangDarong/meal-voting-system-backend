@@ -179,36 +179,68 @@ export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ where: { email } });
+        
         if (!user) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid credentials' 
+            });
         }
 
-        // Add verification check
+        // Check if user is verified first
         if (!user.isVerified) {
             return res.status(403).json({ 
+                success: false,
                 error: 'Please verify your email address before logging in',
                 needsVerification: true
             });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        // Check if user is active (NEW: Block deactivated users)
+        // Check if user is active
         if (!user.isActive) {
             return res.status(403).json({ 
                 success: false,
                 error: 'Your account has been deactivated. Please contact administrator.',
-                accountDeactivated: true
+                accountDeactivated: true,
+                reactivationInfo: user.role === 'voter' ? 
+                    'Register again with your email to reactivate your account.' : 
+                    'Contact an administrator to reactivate your account.'
             });
         }
 
-        const token = jwt.sign({ id: user.id ,role: user.role}, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.json({ message: 'Login successful', token });
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid credentials' 
+            });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: user.id, role: user.role }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '24h' } // Extended to 24 hours
+        );
+        
+        res.json({ 
+            success: true,
+            message: 'Login successful', 
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                isVerified: user.isVerified,
+                isActive: user.isActive
+            }
+        });
     } catch (error) {
-        res.status(500).json({ error: 'Error logging in' });
+        console.error('Login error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Error logging in' 
+        });
     }
 };
 
