@@ -10,7 +10,7 @@ import { sendVerificationEmail,
 
 const User = db.User;
 
-const SCHOOL_DOMAIN = process.env.SCHOOL_DOMAIN || '@student.cadt.edu.kh';
+const SCHOOL_DOMAIN = process.env.SCHOOL_DOMAIN || '@student.cadt.edu.kh' || '@cadt.edu.kh';
 const validateSchoolEmail = (email) => {
     return email.toLowerCase().endsWith(SCHOOL_DOMAIN.toLowerCase());
 }
@@ -132,7 +132,7 @@ export const login = async (req, res) => {
         if (!isPasswordValid) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        
+
         // Check if user is active (NEW: Block deactivated users)
         if (!user.isActive) {
             return res.status(403).json({ 
