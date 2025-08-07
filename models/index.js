@@ -5,6 +5,7 @@ import Category from '../models/category.js';
 import Vote from '../models/vote.js';
 import VotePoll from '../models/votePoll.js';
 import CandidateDish from '../models/candidateDish.js';
+import WhistList from '../models/whishList.js'
 
 
 //Association
@@ -29,6 +30,12 @@ VotePoll.belongsTo(User,{foreignKey: 'userId'});
 User.hasMany(Dish,{foreignKey: 'userId',onDelete: 'CASCADE'});
 Dish.belongsTo(User,{foreignKey: 'userId'});
 
+User.hasOne(WhistList,{foreignKey: 'userId',onDelete: 'CASCADE'});
+WhistList.belongsTo(User,{foreignKey: 'userId',onDelete: 'CASCADE'});
+
+Dish.hasMany(WhistList,{foreignKey: 'dishId',onDelete: 'CASCADE'});
+WhistList.belongsTo(Dish,{foreignKey: 'dishId',onDelete: 'CASCADE'});
+
 
 const db = {
     sequelize,
@@ -37,7 +44,8 @@ const db = {
     Category,
     Vote,
     VotePoll,
-    CandidateDish
+    CandidateDish,
+    WhistList
 }
 
 export default db;
