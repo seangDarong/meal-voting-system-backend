@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
 
 // Sync DB
     try {
-        await db.sequelize.sync({force: true}); // Removed force: true to preserve data
+        await db.sequelize.sync(); // Removed force: true to preserve data
 
         console.log('Database synced');
     } catch (err) {
