@@ -10,7 +10,7 @@ export const addDish = async (req, res) => {
         const { name, categoryId, ingredient, description } = req.body;
         const imageFile = req.file;
         const userId = req.user.id;
-        // const userId = "c5d9f7e4-97a7-43cd-b03b-f21b9dd5a62e";
+        
 ;
 
         // Validate required fields
