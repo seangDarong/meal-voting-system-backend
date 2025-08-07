@@ -132,6 +132,15 @@ export const login = async (req, res) => {
         if (!isPasswordValid) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
+        
+        // Check if user is active (NEW: Block deactivated users)
+        if (!user.isActive) {
+            return res.status(403).json({ 
+                success: false,
+                error: 'Your account has been deactivated. Please contact administrator.',
+                accountDeactivated: true
+            });
+        }
 
         const token = jwt.sign({ id: user.id ,role: user.role}, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.json({ message: 'Login successful', token });
