@@ -48,8 +48,8 @@ const User = sequelize.define('User', {
         type: DataTypes.DATE,
         allowNull: true
     },
-    generation: {
-        type: DataTypes.INTEGER,
+    expectedGraduationDate: {
+        type: DataTypes.DATE,
         allowNull: false
     }
 });
