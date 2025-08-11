@@ -129,7 +129,7 @@ export const updateDish = async (req,res) => {
         })
     }
 }
-//function view all dish
+//function view all dish from every category
 export const getAllDishes = async (req, res) => {
     try {
         const dishes = await Dish.findAll({
@@ -147,6 +147,41 @@ export const getAllDishes = async (req, res) => {
         });
     }
 };
+
+//function view all dish by category
+export const getAllDishesByCategory = async (req, res) => {
+    try{
+        const {categoryId} = req.params;
+
+        if(!categoryId){
+            res.status(400).json({
+                error : "Category ID is required"
+            });
+        }
+
+        const dishes = await Dish.findAll({
+            where : {categoryId},
+            attributes: ['id', 'name','imageURL', 'ingredient','description', 'categoryId' ]
+        })
+
+        if (dishes.length === 0){
+            res.status(404).json({
+                message : "No dishes found for this category"
+            });
+        }
+
+        return res.status(200).json({
+            message: `Dishes fetched successfully for category ${categoryId}`,
+            data: dishes
+        });
+
+    }catch (error) {
+        console.error("Error fetching dishes:", error); 
+        return res.status(500).json({
+            error: "Internal server error while fetching dishes"
+        });
+    }
+}
 
 //delete existing dish
 export const deleteDish = async(req,res) => {
