@@ -47,6 +47,10 @@ const User = sequelize.define('User', {
     resetPasswordExpires: {
         type: DataTypes.DATE,
         allowNull: true
+    },
+    generation: {
+        type: DataTypes.INTEGER,
+        allowNull: false
     }
 });
 
