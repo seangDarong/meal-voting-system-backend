@@ -55,7 +55,7 @@ export const verifyEmail = async (req, res) => {
         }
 
     } catch (error) {
-        console.error(error);
+        console.error('Verify email error:', error);
         res.status(500).json({ error: 'Error verifying email' });
     }
 };
@@ -106,33 +106,22 @@ export const register = async (req, res) => {
         const existingUser = await User.findOne({ where: { email } });
         
         if (existingUser) {
-            // FIXED: Check if user is deactivated FIRST, regardless of verification status
+            // CHANGED: Always show "already exists" for existing users
             if (!existingUser.isActive) {
-                // User is deactivated - handle based on role
+                // User is deactivated - different messages based on role
                 if (existingUser.role === 'voter') {
-                    // For voters: Allow re-registration with new verification
-                    const hashedPassword = await bcrypt.hash(password, 10);
-                    const verificationToken = crypto.randomBytes(32).toString('hex');
-
-                    // Update the existing deactivated voter account
-                    existingUser.password = hashedPassword;
-                    existingUser.verificationToken = verificationToken;
-                    existingUser.verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-                    existingUser.isVerified = false;
-                    // Keep isActive = false until email verification
-                    await existingUser.save();
-
-                    // Send verification email with reactivation flag
-                    await sendVerificationEmail(email, verificationToken, true); // true = isReactivation
-
-                    return res.status(201).json({ 
-                        message: 'Your previous account was deactivated. A new verification email has been sent. Please verify your email to reactivate your account.',
-                        reactivation: true
+                    return res.status(409).json({ 
+                        error: 'An account with this email already exists. If your account was deactivated, please try logging in to reactivate it.',
+                        accountExists: true,
+                        isDeactivated: true,
+                        reactivationHint: 'Try logging in to reactivate your account'
                     });
                 } else {
-                    // For admin/staff: Require admin intervention
-                    return res.status(403).json({ 
-                        error: 'Your account has been deactivated. Please contact an administrator to reactivate your account.',
+                    // For admin/staff: Still require admin intervention
+                    return res.status(409).json({ 
+                        error: 'An account with this email already exists. Your account has been deactivated. Please contact an administrator to reactivate your account.',
+                        accountExists: true,
+                        isDeactivated: true,
                         role: existingUser.role,
                         contactAdmin: true
                     });
@@ -140,10 +129,14 @@ export const register = async (req, res) => {
             } else if (existingUser.isActive) {
                 // User is active - check verification status
                 if (existingUser.isVerified) {
-                    return res.status(409).json({ error: 'Email already in use' });
+                    return res.status(409).json({ 
+                        error: 'Email already in use',
+                        accountExists: true 
+                    });
                 } else {
                     return res.status(409).json({ 
                         error: 'Email already registered. Please check your email for verification instructions or request a new verification email.',
+                        accountExists: true,
                         needsVerification: true
                     });
                 }
@@ -187,27 +180,7 @@ export const login = async (req, res) => {
             });
         }
 
-        // Check if user is verified first
-        if (!user.isVerified) {
-            return res.status(403).json({ 
-                success: false,
-                error: 'Please verify your email address before logging in',
-                needsVerification: true
-            });
-        }
-
-        // Check if user is active
-        if (!user.isActive) {
-            return res.status(403).json({ 
-                success: false,
-                error: 'Your account has been deactivated. Please contact administrator.',
-                accountDeactivated: true,
-                reactivationInfo: user.role === 'voter' ? 
-                    'Register again with your email to reactivate your account.' : 
-                    'Contact an administrator to reactivate your account.'
-            });
-        }
-
+        // Check password first (always verify for security)
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ 
@@ -216,11 +189,60 @@ export const login = async (req, res) => {
             });
         }
 
-        // Generate JWT token
+        // CHANGED: Handle deactivated voters specially
+        if (!user.isActive) {
+            if (user.role === 'voter') {
+                // For deactivated voters: Send reactivation email
+                try {
+                    const verificationToken = crypto.randomBytes(32).toString('hex');
+                    
+                    // Update user with new reactivation token
+                    user.verificationToken = verificationToken;
+                    user.verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+                    user.isVerified = false; // Require re-verification for reactivation
+                    await user.save();
+
+                    // Send reactivation email
+                    await sendVerificationEmail(email, verificationToken, true); // true = isReactivation
+
+                    return res.status(200).json({ 
+                        success: true,
+                        message: 'Your account was deactivated. A reactivation email has been sent to your email address. Please check your email and click the link to reactivate your account.',
+                        reactivationEmailSent: true,
+                        needsReactivation: true
+                    });
+                } catch (emailError) {
+                    console.error('Failed to send reactivation email:', emailError);
+                    return res.status(500).json({
+                        success: false,
+                        error: 'Failed to send reactivation email. Please try again later.'
+                    });
+                }
+            } else {
+                // For deactivated admin/staff: Still require admin intervention
+                return res.status(403).json({ 
+                    success: false,
+                    error: 'Your account has been deactivated. Please contact an administrator to reactivate your account.',
+                    accountDeactivated: true,
+                    contactAdmin: true
+                });
+            }
+        }
+
+        // Check if user is verified (for active users)
+        if (!user.isVerified) {
+            return res.status(403).json({ 
+                success: false,
+                error: 'Please verify your email address before logging in',
+                needsVerification: true
+            });
+        }
+
+        // Generate JWT token for successful login
         const token = jwt.sign(
             { id: user.id, role: user.role }, 
             process.env.JWT_SECRET, 
-            { expiresIn: '24h' } // Extended to 24 hours
+            { expiresIn: '24h' }
         );
         
         res.json({ 
