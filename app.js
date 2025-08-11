@@ -15,7 +15,7 @@ import adminRoutes from './routes/admin.js';
 dotenv.config();
 
 const app = express();
-const frontURL = process.env.FRONTEND_URL;
+const frontURL = `${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}`;
 console.log('listen from ', frontURL);
 app.use(cors({
     origin: frontURL,

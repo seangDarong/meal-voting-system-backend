@@ -30,11 +30,11 @@ export const sendVerificationEmail = async (email, token, isReactivation = false
         'Verify Your Email Address - Meal Voting System';
     
     const title = isReactivation ? 
-        'Account Reactivation' : 
-        'Registration Verification';
+        'Account Reactivation Required' : 
+        'Email Verification Required';
     
     const message = isReactivation ? 
-        'Your account was deactivated. Click the link below to verify your email and reactivate your account:' :
+        'We noticed you tried to log in to your deactivated account. Click the link below to reactivate your account:' :
         'Please click the link below to verify your email address:';
     
     const mailOptions = {
@@ -63,8 +63,12 @@ export const sendVerificationEmail = async (email, token, isReactivation = false
                 
                 <p>This link will expire in 24 hours.</p>
                 ${isReactivation ? 
-                    '<p><strong>Note:</strong> After verification, your account will be reactivated and you can log in normally.</p>' : 
+                    '<p><strong>Note:</strong> After clicking this link, your account will be reactivated and you can log in normally.</p>' : 
                     '<p>If you did not create an account, please ignore this email.</p>'
+                }
+                ${isReactivation ? 
+                    '<p style="color: #666; font-size: 14px;"><em>Your account was deactivated, but you can easily reactivate it by clicking the link above.</em></p>' : 
+                    ''
                 }
             </div>
         `
