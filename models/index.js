@@ -6,7 +6,9 @@ import Vote from '../models/vote.js';
 import VotePoll from '../models/votePoll.js';
 import CandidateDish from '../models/candidateDish.js';
 import WhistList from '../models/whishList.js'
-
+import VoteHistory from '../models/voteHistory.js';
+import Feedback from '../models/feedback.js';
+import CandidateDishHistory from '../models/candidateDishHistory.js';
 
 //Association
 Category.hasMany(Dish,{foreignKey: 'categoryId',onDelete: 'CASCADE'});
@@ -36,6 +38,11 @@ WhistList.belongsTo(User,{foreignKey: 'userId',onDelete: 'CASCADE'});
 Dish.hasMany(WhistList,{foreignKey: 'dishId',onDelete: 'CASCADE'});
 WhistList.belongsTo(Dish,{foreignKey: 'dishId',onDelete: 'CASCADE'});
 
+VoteHistory.belongsTo(Dish, { foreignKey: 'dishId', onDelete: 'CASCADE' });
+Dish.hasMany(VoteHistory, { foreignKey: 'dishId' });
+
+Dish.hasMany(CandidateDishHistory, { foreignKey: 'dishId', onDelete: 'CASCADE' });
+CandidateDishHistory.belongsTo(Dish, { foreignKey: 'dishId' });
 
 const db = {
     sequelize,
@@ -45,7 +52,11 @@ const db = {
     Vote,
     VotePoll,
     CandidateDish,
-    WhistList
+    WhistList,
+    VoteHistory,
+    Feedback,
+    CandidateDishHistory
+
 }
 
 export default db;

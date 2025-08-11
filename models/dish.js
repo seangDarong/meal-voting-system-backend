@@ -4,7 +4,11 @@ import sequelize from '../config/db.js';
 const Dish = sequelize.define('Dish',{
     name: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
+    },
+    name_kh: {
+        type: DataTypes.STRING,
+        allowNull: true,
     },
     imageURL: {
         type: DataTypes.STRING,
@@ -12,9 +16,17 @@ const Dish = sequelize.define('Dish',{
     },
     ingredient: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: true
+    },
+    ingredient_kh: {
+        type: DataTypes.STRING,
+        allowNull: true
     },
     description: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    description_kh: {
         type: DataTypes.STRING,
         allowNull: true
     },
