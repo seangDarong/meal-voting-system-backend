@@ -23,7 +23,7 @@ transporter.verify(function(error, success) {
 });
 
 export const sendVerificationEmail = async (email, token, isReactivation = false) => {
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+    const verificationUrl = `${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/verify-email?token=${token}`;
     
     const subject = isReactivation ? 
         'Reactivate Your Account - Meal Voting System' : 
