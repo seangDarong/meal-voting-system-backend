@@ -126,6 +126,12 @@ export const deleteUser = async (req, res) => {
 
         // Find the user to delete
         const userToDelete = await User.findByPk(id);
+        if (userToDelete.role === 'voter') {
+            return res.status(400).json({
+                success: false,
+                error: 'Use voter-specific deactivation processes. This endpoint is for staff/admin accounts only.'
+            });
+        }
         if (!userToDelete) {
             return res.status(404).json({
                 success: false,
