@@ -13,6 +13,10 @@ const User = sequelize.define('User', {
         unique: true,
         validate: {
             isEmail: true
+        },
+        set(value) {
+            // Always store email in lowercase
+            this.setDataValue('email', value.toLowerCase().trim());
         }
     },
     role : {
@@ -50,7 +54,7 @@ const User = sequelize.define('User', {
     },
     expectedGraduationDate: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: true
     }
 });
 

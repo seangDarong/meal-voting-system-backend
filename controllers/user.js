@@ -63,7 +63,8 @@ export const verifyEmail = async (req, res) => {
 export const resendVerification = async (req, res) => {
     try {
         const { email } = req.body;
-        const user = await User.findOne({ where: { email } });
+        const normalizedEmail = email.toLowerCase().trim();
+        const user = await User.findOne({ where: { email: normalizedEmail } });
 
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -98,12 +99,14 @@ export const register = async (req, res) => {
             return res.status(400).json({ error: 'Password must be at least 6 characters long' });
         }
 
-        if (!validateSchoolEmail(email)) {
+        const normalizedEmail = email.toLowerCase().trim();
+
+        if (!validateSchoolEmail(normalizedEmail)) {
             return res.status(400).json({ error:'Only school email are allowed' });
         }
 
         // Check if user already exists
-        const existingUser = await User.findOne({ where: { email } });
+        const existingUser = await User.findOne({ where: { email: normalizedEmail } });
         
         if (existingUser) {
             // CHANGED: Always show "already exists" for existing users
@@ -148,7 +151,7 @@ export const register = async (req, res) => {
         const verificationToken = crypto.randomBytes(32).toString('hex');
 
         const user = await User.create({  
-            email, 
+            email: normalizedEmail, 
             password: hashedPassword,
             verificationToken,
             verificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
@@ -157,7 +160,7 @@ export const register = async (req, res) => {
         });
 
         // Send verification email
-        await sendVerificationEmail(email, verificationToken, false); // false = not reactivation
+        await sendVerificationEmail(normalizedEmail, verificationToken, false); // false = not reactivation
 
         res.status(201).json({ 
             message: 'Registration successful! Please check your email to verify your account.'
@@ -171,7 +174,8 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await User.findOne({ where: { email } });
+        const normalizedEmail = email.toLowerCase().trim();
+        const user = await User.findOne({ where: { email: normalizedEmail } });
         
         if (!user) {
             return res.status(401).json({ 
@@ -281,7 +285,10 @@ export const requestPasswordReset = async (req, res) => {
                 error: 'Email is required'
             });
         }
-        if (!validateSchoolEmail(email)) {
+        
+        const normalizedEmail = email.toLowerCase().trim();
+        
+        if (!validateSchoolEmail(normalizedEmail)) {
             return res.status(400).json({
                 success: false,
                 error: 'Only school email are allowed'
@@ -289,7 +296,7 @@ export const requestPasswordReset = async (req, res) => {
         }
 
         // Find user by email
-        const user = await User.findOne({ where: { email: email } });
+        const user = await User.findOne({ where: { email: normalizedEmail } });
 
         if (!user) {
             return res.status(404).json({

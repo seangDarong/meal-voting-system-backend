@@ -18,9 +18,11 @@ export const addStaff = async (req, res) => {
             });
         }
 
+        const normalizedEmail = email.toLowerCase().trim();
+
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
+        if (!emailRegex.test(normalizedEmail)) {
             return res.status(400).json({
                 success: false,
                 error: 'Please provide a valid email address'
@@ -46,7 +48,7 @@ export const addStaff = async (req, res) => {
 
         // Check if email already exists
         const existingUser = await User.findOne({ 
-            where: { email: email } 
+            where: { email: normalizedEmail } 
         });
         
         if (existingUser) {
@@ -61,7 +63,7 @@ export const addStaff = async (req, res) => {
 
         // Create new user with specified role and mark as verified
         const newUser = await User.create({
-            email: email,
+            email: normalizedEmail,
             password: hashedPassword,
             role: role,
             isVerified: true, // Auto-verify admin/staff accounts
