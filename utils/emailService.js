@@ -22,8 +22,14 @@ transporter.verify(function(error, success) {
     }
 });
 
+// Generate a random number for email uniqueness
+const generateRandomId = () => {
+    return Math.floor(Math.random() * 1000000) + 100000; // 6-digit number
+};
+
 export const sendVerificationEmail = async (email, token, isReactivation = false) => {
     const verificationUrl = `${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/verify-email?token=${token}`;
+    const randomId = generateRandomId();
     
     const subject = isReactivation ? 
         'Reactivate Your Account - Meal Voting System' : 
@@ -70,13 +76,18 @@ export const sendVerificationEmail = async (email, token, isReactivation = false
                     '<p style="color: #666; font-size: 14px;"><em>Your account was deactivated, but you can easily reactivate it by clicking the link above.</em></p>' : 
                     ''
                 }
+                
+                <!-- Email ID for uniqueness -->
+                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
+                    <p>Email ID: ${randomId} | Meal Voting System</p>
+                </div>
             </div>
         `
     };
 
     try {
         const info = await transporter.sendMail(mailOptions);
-        console.log(`${isReactivation ? 'Reactivation' : 'Verification'} email sent successfully to:`, email);
+        console.log(`${isReactivation ? 'Reactivation' : 'Verification'} email sent successfully to:`, email, `| Email ID: ${randomId}`);
         return { success: true, messageId: info.messageId };
     } catch (error) {
         console.error('Error sending email:', error);
@@ -89,6 +100,7 @@ export const sendVerificationEmail = async (email, token, isReactivation = false
 
 export const sendPasswordResetEmail = async (email, resetToken) => {
     const resetUrl = `${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/reset-password?token=${resetToken}`;
+    const randomId = generateRandomId();
     
     const mailOptions = {
         from: process.env.EMAIL_USERNAME,
@@ -123,13 +135,17 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
                     <li>Your password will remain unchanged until you click the link above</li>
                 </ul>
                 
+                <!-- Email ID for uniqueness -->
+                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
+                    <p>Email ID: ${randomId} | Meal Voting System</p>
+                </div>
             </div>
         `
     };
 
     try {
         await transporter.sendMail(mailOptions);
-        console.log('Reset password email sent successfully to:', email);
+        console.log('Reset password email sent successfully to:', email, `| Email ID: ${randomId}`);
     } catch (error) {
         console.error('Error sending email:', error);
         if (error.code === 'EAUTH') {
