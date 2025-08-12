@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import {serveSwagger, setupSwagger} from "./config/swagger.js";
 import categoryRoutes from './routes/category.js'
 import adminRoutes from './routes/admin.js';
+import wishesRoutes from './routes/wishes.js';
 
 
 
@@ -32,8 +33,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes)
 
 app.use('/api/admin', adminRoutes);
-
-
+app.use('/api/wishes', wishesRoutes);
 
 app.get('/', (req, res) => {
     res.send('Meal Voting API');
@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
 
 // Sync DB
     try {
-        await db.sequelize.sync({force: true}); // Removed force: true to preserve data
+        await db.sequelize.sync(); // Removed force: true to preserve data
 
         console.log('Database synced');
     } catch (err) {

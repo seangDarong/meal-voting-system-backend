@@ -4,12 +4,23 @@ import Dish from '../models/dish.js';
 const COOLDOWN_SECONDS = 3600; // 1 hour
 
 // GET /api/wishes/mine
+// GET /api/wishes/mine
 export const getMyWish = async (req, res) => {
     try {
+        console.log('Looking for userId:', req.user.id);
+        console.log('User ID type:', typeof req.user.id);
+        
         const wish = await WishList.findOne({
             where: { userId: req.user.id },
-            include: [{ model: Dish, attributes: ['name', 'imageURL'], foreignKey: 'dishId' }]
+            include: [{ 
+                model: Dish, 
+                attributes: ['name', 'imageURL']
+                // Remove foreignKey: 'dishId' from here
+            }]
         });
+        
+        console.log('Found wish:', wish ? wish.toJSON() : 'null');
+        
         if (!wish) return res.status(404).json({ message: 'Wish not found' });
 
         res.json({
@@ -19,7 +30,8 @@ export const getMyWish = async (req, res) => {
             updatedAt: wish.updatedAt
         });
     } catch (err) {
-        res.status(500).json({ message: 'Server error' });
+        console.error('Error details:', err);
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
