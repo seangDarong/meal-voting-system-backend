@@ -6,6 +6,7 @@ import { Op } from 'sequelize';
 import { sendVerificationEmail,
         sendPasswordResetEmail
         } from '../utils/emailService.js';
+import WishList from '../models/wishList.js';
 
 const User = db.User;
 
@@ -158,6 +159,12 @@ export const register = async (req, res) => {
             isVerified: false,
             role: 'voter' // Default role for registration
         });
+        const wish = await WishList.create({
+            userId: user.id,
+            dishId: null,
+            updatedAt: new Date()
+        });
+        console.log('WishList row created:', wish?.toJSON());
 
         // Send verification email
         await sendVerificationEmail(normalizedEmail, verificationToken, false); // false = not reactivation

@@ -5,7 +5,7 @@ import Category from '../models/category.js';
 import Vote from '../models/vote.js';
 import VotePoll from '../models/votePoll.js';
 import CandidateDish from '../models/candidateDish.js';
-import WhistList from '../models/whishList.js'
+import WishList from './wishList.js'
 import VoteHistory from '../models/voteHistory.js';
 import Feedback from '../models/feedback.js';
 import CandidateDishHistory from '../models/candidateDishHistory.js';
@@ -32,11 +32,11 @@ VotePoll.belongsTo(User,{foreignKey: 'userId'});
 User.hasMany(Dish,{foreignKey: 'userId',onDelete: 'CASCADE'});
 Dish.belongsTo(User,{foreignKey: 'userId'});
 
-User.hasOne(WhistList,{foreignKey: 'userId',onDelete: 'CASCADE'});
-WhistList.belongsTo(User,{foreignKey: 'userId',onDelete: 'CASCADE'});
+User.hasOne(WishList,{foreignKey: 'userId',onDelete: 'CASCADE'});
+WishList.belongsTo(User,{foreignKey: 'userId',onDelete: 'CASCADE'});
 
-Dish.hasMany(WhistList,{foreignKey: 'dishId',onDelete: 'CASCADE'});
-WhistList.belongsTo(Dish,{foreignKey: 'dishId',onDelete: 'CASCADE'});
+Dish.hasMany(WishList,{foreignKey: 'dishId',onDelete: 'CASCADE'});
+WishList.belongsTo(Dish,{foreignKey: 'dishId',onDelete: 'CASCADE'});
 
 VoteHistory.belongsTo(Dish, { foreignKey: 'dishId', onDelete: 'CASCADE' });
 Dish.hasMany(VoteHistory, { foreignKey: 'dishId' });
@@ -52,7 +52,7 @@ const db = {
     Vote,
     VotePoll,
     CandidateDish,
-    WhistList,
+    WishList,
     VoteHistory,
     Feedback,
     CandidateDishHistory
