@@ -1,13 +1,15 @@
 import express from 'express';
 import { getMyWish,
         updateWish,
-        removeWish
+        removeWish,
+        getAllWishes
  } from '../controllers/wishList.js';
 import { authenticateToken } from '../middlewares/auth.js';
 
 const router = express.Router();
 
 router.get('/mine', authenticateToken, getMyWish);
+router.get('/all', authenticateToken, getAllWishes);
 router.put('/', authenticateToken, updateWish);
 router.delete('/', authenticateToken, removeWish);
 

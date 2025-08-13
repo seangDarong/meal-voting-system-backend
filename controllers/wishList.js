@@ -1,5 +1,8 @@
 import WishList from '../models/wishList.js';
 import Dish from '../models/dish.js';
+import Category from '../models/category.js';  // Add this import
+import db from '../models/index.js'; 
+import { Op } from 'sequelize'; 
 
 const COOLDOWN_SECONDS = 3600; // 1 hour
 
@@ -95,5 +98,97 @@ export const removeWish = async (req, res) => {
         res.json({ message: 'Wish removed' });
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
+    }
+};
+
+// get/api/wishes/all
+export const getAllWishes = async (req, res) => {
+    try {
+        const { 
+            page = 1, 
+            limit = 10, 
+            sortBy = 'totalWishes', 
+            sortOrder = 'DESC' 
+        } = req.query;
+
+        const offset = (page - 1) * limit;
+
+        // Get all dishes
+        const allDishes = await Dish.findAndCountAll({
+            attributes: ['id', 'name', 'imageURL', 'categoryId'],
+            include: [
+                {
+                    model: Category,
+                    attributes: ['name']
+                }
+            ],
+            limit: parseInt(limit),
+            offset: parseInt(offset)
+        });
+
+        // Get wish counts for all dishes
+        const wishCounts = await WishList.findAll({
+            attributes: [
+                'dishId',
+                [db.sequelize.fn('COUNT', db.sequelize.col('dishId')), 'count']
+            ],
+            where: {
+                dishId: {
+                    [Op.ne]: null
+                }
+            },
+            group: ['dishId'],
+            raw: true
+        });
+
+        // Create a map of dish wishes
+        const wishCountMap = {};
+        wishCounts.forEach(item => {
+            wishCountMap[item.dishId] = parseInt(item.count);
+        });
+
+        // Combine dishes with wish counts
+        let dishesWithWishes = allDishes.rows.map(dish => ({
+            dishId: dish.id,
+            name: dish.name,
+            imageUrl: dish.imageURL,
+            categoryId: dish.categoryId,
+            categoryName: dish.Category ? dish.Category.name : null,
+            totalWishes: wishCountMap[dish.id] || 0
+        }));
+
+        // Sort the results
+        if (sortBy === 'totalWishes') {
+            dishesWithWishes.sort((a, b) => {
+                return sortOrder === 'ASC' 
+                    ? a.totalWishes - b.totalWishes
+                    : b.totalWishes - a.totalWishes;
+            });
+        } else if (sortBy === 'name') {
+            dishesWithWishes.sort((a, b) => {
+                return sortOrder === 'ASC' 
+                    ? a.name.localeCompare(b.name)
+                    : b.name.localeCompare(a.name);
+            });
+        }
+
+        res.json({
+            dishes: dishesWithWishes,
+            pagination: {
+                currentPage: parseInt(page),
+                totalPages: Math.ceil(allDishes.count / limit),
+                totalItems: allDishes.count,
+                itemsPerPage: parseInt(limit),
+                hasNextPage: page * limit < allDishes.count,
+                hasPrevPage: page > 1
+            }
+        });
+
+    } catch (err) {
+        console.error('Error fetching wishes status:', err);
+        res.status(500).json({ 
+            message: 'Server error', 
+            error: err.message 
+        });
     }
 };

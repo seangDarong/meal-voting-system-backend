@@ -44,6 +44,9 @@ Dish.hasMany(VoteHistory, { foreignKey: 'dishId' });
 Dish.hasMany(CandidateDishHistory, { foreignKey: 'dishId', onDelete: 'CASCADE' });
 CandidateDishHistory.belongsTo(Dish, { foreignKey: 'dishId' });
 
+Dish.belongsTo(Category, { foreignKey: 'categoryId' });
+Category.hasMany(Dish, { foreignKey: 'categoryId' });
+
 const db = {
     sequelize,
     User,
