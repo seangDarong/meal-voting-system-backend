@@ -92,10 +92,13 @@ export const resendVerification = async (req, res) => {
 
 export const register = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, expectedGraduationMonth, expectedGraduationYear } = req.body;
+        
+        // Validate required fields
         if (!email || !password) {
-            return res.status(400).json({ error: 'Email, and password are required' });
+            return res.status(400).json({ error: 'Email and password are required' });
         }
+        
         if (password.length < 6) {
             return res.status(400).json({ error: 'Password must be at least 6 characters long' });
         }
@@ -103,7 +106,37 @@ export const register = async (req, res) => {
         const normalizedEmail = email.toLowerCase().trim();
 
         if (!validateSchoolEmail(normalizedEmail)) {
-            return res.status(400).json({ error:'Only school email are allowed' });
+            return res.status(400).json({ error: 'Only school email are allowed' });
+        }
+
+        // Validate and parse graduation date (optional)
+        let expectedGraduationDate = null;
+        if (expectedGraduationMonth && expectedGraduationYear) {
+            const month = parseInt(expectedGraduationMonth);
+            const year = parseInt(expectedGraduationYear);
+            
+            // Validate month (1-12)
+            if (month < 1 || month > 12) {
+                return res.status(400).json({ 
+                    error: 'Invalid graduation month. Please enter a value between 1 and 12' 
+                });
+            }
+            
+            // Validate year (current year to current year + 10)
+            const currentYear = new Date().getFullYear();
+            if (year < currentYear || year > currentYear + 10) {
+                return res.status(400).json({ 
+                    error: `Invalid graduation year. Please enter a year between ${currentYear} and ${currentYear + 10}` 
+                });
+            }
+            
+            // Create date object (set to first day of graduation month)
+            expectedGraduationDate = new Date(year, month - 1, 1);
+        } else if (expectedGraduationMonth || expectedGraduationYear) {
+            // If only one is provided, require both
+            return res.status(400).json({ 
+                error: 'Both graduation month and year are required if providing graduation date' 
+            });
         }
 
         // Check if user already exists
@@ -157,8 +190,10 @@ export const register = async (req, res) => {
             verificationToken,
             verificationExpires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
             isVerified: false,
-            role: 'voter' // Default role for registration
+            role: 'voter', // Default role for registration
+            expectedGraduationDate: expectedGraduationDate // Add graduation date
         });
+        
         const wish = await WishList.create({
             userId: user.id,
             dishId: null,
@@ -169,7 +204,15 @@ export const register = async (req, res) => {
         await sendVerificationEmail(normalizedEmail, verificationToken, false); // false = not reactivation
 
         res.status(201).json({ 
-            message: 'Registration successful! Please check your email to verify your account.'
+            message: 'Registration successful! Please check your email to verify your account.',
+            data: {
+                userId: user.id,
+                email: user.email,
+                expectedGraduationDate: expectedGraduationDate ? {
+                    month: expectedGraduationDate.getMonth() + 1,
+                    year: expectedGraduationDate.getFullYear()
+                } : null
+            }
         });
     } catch (error) {
         console.error('Registration error:', error);
