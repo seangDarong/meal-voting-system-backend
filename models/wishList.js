@@ -10,9 +10,14 @@ const WishList = sequelize.define('WishList', {
     dishId: {
         type: DataTypes.INTEGER,
         allowNull: true,
+    },
+    lastModified: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null
     }
 }, {
-    timestamps: true // enables createdAt and updatedAt
+    timestamps: true
 });
 
 export default WishList;

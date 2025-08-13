@@ -162,7 +162,6 @@ export const register = async (req, res) => {
         const wish = await WishList.create({
             userId: user.id,
             dishId: null,
-            updatedAt: new Date()
         });
         console.log('WishList row created:', wish?.toJSON());
 

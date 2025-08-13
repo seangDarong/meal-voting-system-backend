@@ -45,18 +45,21 @@ export const updateWish = async (req, res) => {
         if (!wish) return res.status(404).json({ message: 'Wish not found' });
 
         const now = new Date();
-        const lastUpdate = wish.updatedAt || new Date(0);
-        const secondsSince = (now - lastUpdate) / 1000;
-
-        if (secondsSince < COOLDOWN_SECONDS) {
-            return res.status(403).json({
-                message: 'Cooldown active',
-                cooldownRemaining: Math.ceil(COOLDOWN_SECONDS - secondsSince)
-            });
+        const lastUpdate = wish.lastModified; // Use lastModified instead
+        
+        // Only check cooldown if lastModified exists (not null)
+        if (lastUpdate) {
+            const secondsSince = (now - lastUpdate) / 1000;
+            if (secondsSince < COOLDOWN_SECONDS) {
+                return res.status(403).json({
+                    message: 'Cooldown active',
+                    cooldownRemaining: Math.ceil(COOLDOWN_SECONDS - secondsSince)
+                });
+            }
         }
 
         wish.dishId = dishId;
-        wish.updatedAt = now;
+        wish.lastModified = now; // Set lastModified instead of updatedAt
         await wish.save();
 
         res.json({ message: 'Wish updated', dishId });
@@ -65,25 +68,28 @@ export const updateWish = async (req, res) => {
     }
 };
 
-// DELETE /api/wishes
+// DELETE /api/wishes  
 export const removeWish = async (req, res) => {
     try {
         const wish = await WishList.findOne({ where: { userId: req.user.id } });
         if (!wish) return res.status(404).json({ message: 'Wish not found' });
 
         const now = new Date();
-        const lastUpdate = wish.updatedAt || new Date(0);
-        const secondsSince = (now - lastUpdate) / 1000;
+        const lastUpdate = wish.lastModified; // Use lastModified instead
 
-        if (secondsSince < COOLDOWN_SECONDS) {
-            return res.status(403).json({
-                message: 'Cooldown active',
-                cooldownRemaining: Math.ceil(COOLDOWN_SECONDS - secondsSince)
-            });
+        // Only check cooldown if lastModified exists (not null)
+        if (lastUpdate) {
+            const secondsSince = (now - lastUpdate) / 1000;
+            if (secondsSince < COOLDOWN_SECONDS) {
+                return res.status(403).json({
+                    message: 'Cooldown active',
+                    cooldownRemaining: Math.ceil(COOLDOWN_SECONDS - secondsSince)
+                });
+            }
         }
 
         wish.dishId = null;
-        wish.updatedAt = now;
+        wish.lastModified = now; // Set lastModified instead of updatedAt
         await wish.save();
 
         res.json({ message: 'Wish removed' });
