@@ -1,208 +1,88 @@
-import { v4 as uuidv4 } from 'uuid';
+// controllers/voteController.js
 import db from '../models/index.js';
-import cloudinary from '../utils/cloudinary.js';
+const VotePoll = db.VotePoll;
+const CandidateDish = db.CandidateDish;
 
-const Dish = db.Dish;
-
-//add a new dish to catalog
-export const addDish = async (req, res) => {
+export const submitVoteOptions = async (req, res) => {
     try {
-        const { name, categoryId, ingredient, description } = req.body;
-        const imageFile = req.file;
-        const userId = req.user.id;
+        const { voteDate, dishIds } = req.body;
 
-        // Validate required fields
-        if (!name || !categoryId || !imageFile || !ingredient || !description) {
-            return res.status(400).json({
-                error: "Missing required fields: name, category, image, ingredient, description"
-            });
+        if (!voteDate || !Array.isArray(dishIds) || dishIds.length === 0) {
+            return res.status(400).json({ error: 'voteDate and dishIds are required' });
         }
 
-        //  Check if a dish with the same name already exists
-        const existingDish = await Dish.findOne({ where: { name } });
-        if (existingDish) {
-            return res.status(409).json({
-                error: "A dish with this name already exists. Please choose a different name."
-            });
+        // Make sure staffId is available (from auth middleware)
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ error: 'Staff ID is required (user not authenticated)' });
         }
 
-        // Upload image to Cloudinary
-        const uploadToCloudinary = () => {
-            return new Promise((resolve, reject) => {
-                const stream = cloudinary.uploader.upload_stream(
-                    {
-                        folder: 'Dishes',
-                        public_id: uuidv4(),
-                        resource_type: 'image',
-                    },
-                    (error, result) => {
-                        if (error) reject(error);
-                        else resolve(result);
-                    }
-                );
-                stream.end(imageFile.buffer);
-            });
-        };
+        const staffId = req.user.id;
 
-        const result = await uploadToCloudinary();
+        // Configurable limits
+        const maxDaysAhead = 30; 
+        const allowedMaxDishes = 5;
 
-        //  Save dish to database
-        const newDish = await Dish.create({
-            name,
-            categoryId,
-            ingredient,
-            description,
-            imageURL: result.secure_url,
-            userId
+        // Today's date (midnight)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Input vote date
+        const voteDateObj = new Date(voteDate);
+        voteDateObj.setHours(0, 0, 0, 0);
+
+        // 1. Prevent past dates
+        if (voteDateObj < today) {
+            return res.status(400).json({ error: 'voteDate cannot be in the past' });
+        }
+
+        // 2. Prevent too far in the future
+        const diffInDays = Math.floor((voteDateObj - today) / (1000 * 60 * 60 * 24));
+        if (diffInDays > maxDaysAhead) {
+            return res.status(400).json({ error: `voteDate cannot be more than ${maxDaysAhead} days ahead` });
+        }
+
+        // 3. Enforce dish limit
+        if (dishIds.length > allowedMaxDishes) {
+            return res.status(400).json({ error: `Cannot submit more than ${allowedMaxDishes} dishes` });
+        }
+
+        // 4. Prevent duplicate polls
+        const existingPoll = await VotePoll.findOne({ where: { voteDate } });
+        if (existingPoll) {
+            return res.status(400).json({ error: 'A vote poll already exists for this date' });
+        }
+
+        // 5. Calculate mealDate = voteDate + 1
+        const mealDateObj = new Date(voteDateObj);
+        mealDateObj.setDate(mealDateObj.getDate() + 1);
+
+        const mealDateStr = mealDateObj.toISOString().split('T')[0]; // DATEONLY format
+
+        // 6. Create poll with staffId
+        const votePoll = await VotePoll.create({
+            voteDate,
+            mealDate: mealDateStr,
+            staffId // store which staff created it
         });
 
-        return res.status(200).json({
-            message: "Dish created successfully",
-            dish: newDish
+        // 7. Create candidate dishes
+        const entries = dishIds.map(dishId => ({
+            votePollId: votePoll.id,
+            dishId,
+            isSelected: false
+        }));
+        await CandidateDish.bulkCreate(entries);
+
+        return res.status(201).json({
+            message: 'Vote poll created successfully',
+            votePollId: votePoll.id,
+            voteDate,
+            mealDate: mealDateStr,
+            staffId
         });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            error: 'Internal server error'
-        });
+        console.error('Error creating vote poll:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 };
-
-// edit or update dish information
-export const updateDish = async (req,res) => {
-    try{
-        const dishId = req.params.id;
-        const {name,description,ingredient,categoryId} = req.body;
-        const imageFile = req.file;
-        
-        const dish = await Dish.findByPk(dishId);
-        if (!dish) {
-            return res.status(404).json({ error: "Dish not found" });
-        }
-
-        if (name && name !== dish.name) {
-            const nameExists = await Dish.findOne({ where: { name } });
-            if (nameExists) {
-                return res.status(400).json({ error: "Dish name must be unique" });
-            }
-        }
-
-        let imageURL = dish.imageURL;
-        if (imageFile){
-            const uploadToCloudinary = () => {
-                return new Promise((resolve,reject)=>{
-                    const stream = cloudinary.uploader.upload_stream(
-                        {
-                            folder: 'Dishes',
-                            public_id: dish.id,
-                            resource_type: 'image',
-                            overwrite: true,
-                        },
-                        (error,result) => {
-                            if (error) reject(error);
-                            else resolve(result);
-                        }
-                    );
-                    stream.end(imageFile.buffer);
-                });
-            };
-            const result = await uploadToCloudinary();
-            imageURL = result.secure_url;
-        }
-
-        await dish.update({
-            name : name || Dish.name,
-            decription: description || dish.description,
-            ingredient: ingredient || dish.ingredient,
-            categoryId: categoryId || dish.categoryId,
-            imageURL
-        });
-
-        res.status(200).json({
-            message : "Dish update successfully"
-        })
-
-    }catch (error){
-        res.status(400).json({
-            message : "Error cannot update dish"
-        })
-    }
-}
-//function view all dish from every category
-export const getAllDishes = async (req, res) => {
-    try {
-        const dishes = await Dish.findAll({
-            attributes: ['id', 'name','imageURL', 'ingredient','description', 'categoryId' ]
-        });
-
-        return res.status(200).json({
-            message: "Dishes fetched successfully",
-            data: dishes
-        });
-    } catch (error) {
-        console.error("Error fetching dishes:", error); 
-        return res.status(500).json({
-            error: "Internal server error while fetching dishes"
-        });
-    }
-};
-
-//function view all dish by category
-export const getAllDishesByCategory = async (req, res) => {
-    try{
-        const {categoryId} = req.params;
-
-        if(!categoryId){
-            res.status(400).json({
-                error : "Category ID is required"
-            });
-        }
-
-        const dishes = await Dish.findAll({
-            where : {categoryId},
-            attributes: ['id', 'name','imageURL', 'ingredient','description', 'categoryId' ]
-        })
-
-        if (dishes.length === 0){
-            res.status(404).json({
-                message : "No dishes found for this category"
-            });
-        }
-
-        return res.status(200).json({
-            message: `Dishes fetched successfully for category ${categoryId}`,
-            data: dishes
-        });
-
-    }catch (error) {
-        console.error("Error fetching dishes:", error); 
-        return res.status(500).json({
-            error: "Internal server error while fetching dishes"
-        });
-    }
-}
-
-//delete existing dish
-export const deleteDish = async(req,res) => {
-    try{
-        const dishId = req.params.id;
-        const dish = await Dish.findByPk(dishId);
-        if (!dish){
-            return res.status(404).json({ error: "Dish not found" });
-        }
-
-        await cloudinary.uploader.destroy(`Dishes/${dish.id}`, { resource_type: 'image' });// detlete photo from cloudinary 
-
-        await dish.destroy();
-        return res.status(200).json({
-            message: "Dish deleted successfully"
-        });
-
-    }catch(error){
-        console.error("Error deleting dishes:", error); 
-        return res.status(500).json({
-            error: "Internal server error while deleting dishes"
-        });
-    }
-}
