@@ -54,7 +54,7 @@ const User = sequelize.define('User', {
     },
     expectedGraduationDate: {
         type: DataTypes.DATE,
-        allowNull: false
+        allowNull: true
     }
 });
 
