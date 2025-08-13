@@ -17,11 +17,8 @@ Dish.belongsTo(Category,{foreignKey: 'categoryId'});
 Dish.hasMany(CandidateDish,{foreignKey: 'dishId',onDelete: 'CASCADE'});
 CandidateDish.belongsTo(Dish,{foreignKey: 'dishId'});
 
-CandidateDish.hasOne(VotePoll,{foreignKey: 'candidateDishId',onDelete: 'CASCADE'});
-VotePoll.belongsTo(CandidateDish,{foreignKey: 'candidateDishId'});
-
-VotePoll.hasMany(Vote,{foreignKey: 'pollId',onDelete: 'CASCADE'});
-Vote.belongsTo(VotePoll,{foreignKey: 'pollId'});
+VotePoll.hasMany(CandidateDish, { foreignKey: 'votePollId', onDelete: 'CASCADE' });
+CandidateDish.belongsTo(VotePoll, { foreignKey: 'votePollId' });
 
 User.hasMany(Vote,{foreignKey: 'userId',onDelete: 'CASCADE'});
 Vote.belongsTo(User,{foreignKey: 'userId'});
@@ -44,8 +41,10 @@ Dish.hasMany(VoteHistory, { foreignKey: 'dishId' });
 Dish.hasMany(CandidateDishHistory, { foreignKey: 'dishId', onDelete: 'CASCADE' });
 CandidateDishHistory.belongsTo(Dish, { foreignKey: 'dishId' });
 
-Dish.belongsTo(Category, { foreignKey: 'categoryId' });
-Category.hasMany(Dish, { foreignKey: 'categoryId' });
+
+Dish.hasMany(CandidateDish, { foreignKey: 'dishId', onDelete: 'CASCADE' });
+CandidateDish.belongsTo(Dish, { foreignKey: 'dishId' });
+
 
 const db = {
     sequelize,

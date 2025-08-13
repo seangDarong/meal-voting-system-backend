@@ -2,9 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import db from './models/index.js';
-import dishRoutes from './routes/canteen.js'
+import dishRoutes from './routes/dish.js'
 // import {serveSwagger, setupSwagger} from "./config/swagger.js";
 import authRoutes from './routes/auth.js';
+import canteenRoutes from './routes/canteen.js';
 import {serveSwagger, setupSwagger} from "./config/swagger.js";
 import categoryRoutes from './routes/category.js'
 import adminRoutes from './routes/admin.js';
@@ -29,6 +30,7 @@ app.use('/docs', serveSwagger, setupSwagger);
 
 app.use('/api/dishes',dishRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/vote-option', canteenRoutes);
 
 app.use('/api/categories', categoryRoutes)
 
