@@ -647,3 +647,141 @@ export const getOwnProfile = async (req, res) => {
         });
     }
 };
+
+// Add this function to your user controller
+
+
+// Add this function to your user controller
+
+export const setupGraduationDate = async (req, res) => {
+    try {
+        const { expectedGraduationMonth, expectedGraduationYear } = req.body;
+        const userId = req.user.id;
+        
+        // Validate required fields
+        if (!expectedGraduationMonth || !expectedGraduationYear) {
+            return res.status(400).json({ 
+                error: 'Both graduation month and year are required' 
+            });
+        }
+        
+        const month = parseInt(expectedGraduationMonth);
+        const year = parseInt(expectedGraduationYear);
+        
+        // Validate month (1-12)
+        if (month < 1 || month > 12) {
+            return res.status(400).json({ 
+                error: 'Invalid graduation month. Please enter a value between 1 and 12' 
+            });
+        }
+        
+        // Validate year (current year to current year + 10)
+        const currentYear = new Date().getFullYear();
+        if (year < currentYear || year > currentYear + 10) {
+            return res.status(400).json({ 
+                error: `Invalid graduation year. Please enter a year between ${currentYear} and ${currentYear + 10}` 
+            });
+        }
+        
+        // Create date object (set to first day of graduation month)
+        const expectedGraduationDate = new Date(year, month - 1, 1);
+        
+        // Update user's graduation date
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        user.expectedGraduationDate = expectedGraduationDate;
+        await user.save();
+        
+        res.json({
+            message: 'Graduation date set successfully',
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                displayName: user.displayName,
+                expectedGraduationDate: {
+                    month: month,
+                    year: year
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('Setup graduation date error:', error);
+        res.status(500).json({ error: 'Error setting graduation date' });
+    }
+};
+
+// Add validation endpoint for Microsoft callback
+export const handleMicrosoftCallback = async (req, res) => {
+    try {
+        const { token } = req.query;
+        
+        if (!token) {
+            return res.status(400).json({ error: 'No token provided' });
+        }
+        
+        // Verify the token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findByPk(decoded.id);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json({
+            message: 'Microsoft authentication successful',
+            token: token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                displayName: user.displayName,
+                isVerified: user.isVerified,
+                expectedGraduationDate: user.expectedGraduationDate ? {
+                    month: user.expectedGraduationDate.getMonth() + 1,
+                    year: user.expectedGraduationDate.getFullYear()
+                } : null,
+                provider: 'microsoft'
+            }
+        });
+        
+    } catch (error) {
+        console.error('Microsoft callback error:', error);
+        res.status(500).json({ error: 'Authentication failed' });
+    }
+};
+
+// Add endpoint to check if graduation date is needed
+export const checkGraduationStatus = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findByPk(userId);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const needsGraduationDate = !user.expectedGraduationDate;
+        
+        res.json({
+            needsGraduationDate,
+            user: {
+                id: user.id,
+                email: user.email,
+                displayName: user.displayName,
+                expectedGraduationDate: user.expectedGraduationDate ? {
+                    month: user.expectedGraduationDate.getMonth() + 1,
+                    year: user.expectedGraduationDate.getFullYear()
+                } : null
+            }
+        });
+        
+    } catch (error) {
+        console.error('Check graduation status error:', error);
+        res.status(500).json({ error: 'Error checking graduation status' });
+    }
+};

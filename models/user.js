@@ -2,60 +2,67 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
 
 const User = sequelize.define('User', {
-    id : {
+    id: {
         type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
-        defaultValue: DataTypes.UUIDV4
     },
-    email : {
+    email: {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
         validate: {
-            isEmail: true
+            isEmail: true,
         },
-        set(value) {
-            // Always store email in lowercase
-            this.setDataValue('email', value.toLowerCase().trim());
-        }
     },
-    role : {
-        type : DataTypes.ENUM('admin', 'voter', 'staff'),
+    password: {
+        type: DataTypes.STRING,
+        allowNull: true, // Allow null for Microsoft auth users
+    },
+    role: {
+        type: DataTypes.ENUM('admin', 'staff', 'voter'),
         allowNull: false,
         defaultValue: 'voter',
     },
-    password : {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
     isVerified: {
         type: DataTypes.BOOLEAN,
-        defaultValue: false
+        defaultValue: false,
     },
-    isActive : {
+    isActive: {
         type: DataTypes.BOOLEAN,
-        defaultValue: true
+        defaultValue: true,
     },
     verificationToken: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
     },
     verificationExpires: {
         type: DataTypes.DATE,
-        allowNull: true
+        allowNull: true,
     },
     resetPasswordToken: {
         type: DataTypes.STRING,
-        allowNull: true
+        allowNull: true,
     },
     resetPasswordExpires: {
         type: DataTypes.DATE,
-        allowNull: true
+        allowNull: true,
     },
     expectedGraduationDate: {
         type: DataTypes.DATE,
-        allowNull: true
+        allowNull: true,
+    },
+    microsoftId: { // Add Microsoft ID field
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+    },
+    displayName: { // Add display name from Microsoft
+        type: DataTypes.STRING,
+        allowNull: true,
     }
+}, {
+    timestamps: true,
 });
 
 export default User;
