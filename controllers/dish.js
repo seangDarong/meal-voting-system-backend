@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../models/index.js';
 import cloudinary from '../utils/cloudinary.js';
-
+import { Op } from 'sequelize';
 const Dish = db.Dish;
 
 // Add a new dish
@@ -29,9 +29,9 @@ export const addDish = async (req, res) => {
         // Check if a dish with the same English or Khmer name already exists
         const existingDish = await Dish.findOne({ 
             where: { 
-                [db.Sequelize.Op.or]: [
-                    { name },
-                    { name_kh }
+                [Op.or]: [
+                    { name: name },       // ✅ explicit key-value
+                    { name_kh: name_kh }  // ✅ explicit key-value
                 ]
             } 
         });
