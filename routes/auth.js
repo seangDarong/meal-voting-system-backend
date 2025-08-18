@@ -7,8 +7,9 @@ import {
     requestPasswordReset, 
     resetPasswordWithToken,
     handleMicrosoftCallback,
-    setupGraduationDate,      // Add this import
-    checkGraduationStatus     // Add this import
+    setupGraduationDate,
+    checkSetupNeeds,
+    setupPasswordForMicrosoft
 } from '../controllers/user.js';
 import { authenticateToken } from '../middlewares/auth.js';
 
@@ -245,6 +246,7 @@ router.post('/reset-password', resetPasswordWithToken);
  * /api/auth/microsoft/callback:
  *   get:
  *     summary: Handle Microsoft OAuth callback
+ *     description: Handles Microsoft authentication callback and redirects users based on their setup needs
  *     tags: [Authentication]
  *     parameters:
  *       - in: query
@@ -252,27 +254,27 @@ router.post('/reset-password', resetPasswordWithToken);
  *         required: true
  *         schema:
  *           type: string
- *         description: OAuth authorization code
+ *         description: OAuth authorization code from Microsoft
  *     responses:
- *       200:
- *         description: Microsoft authentication successful
- *         content:
- *           application/json:
+ *       302:
+ *         description: Redirect to frontend based on user setup needs
+ *         headers:
+ *           Location:
+ *             description: Redirect URL
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 token:
- *                   type: string
- *                 user:
- *                   $ref: '#/components/schemas/User'
+ *               type: string
+ *               enum:
+ *                 - "/setup-account?token=<JWT>&needs_password=true&needs_graduation=false"
+ *                 - "/auth/callback?token=<JWT>&provider=microsoft"
+ *                 - "/login?error=microsoft_auth_failed"
  *       400:
  *         description: Authentication failed
- *         content:
- *           application/json:
+ *         headers:
+ *           Location:
+ *             description: Redirect to login with error
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               type: string
+ *               example: "/login?error=microsoft_auth_failed"
  */
 router.get('/microsoft/callback', handleMicrosoftCallback);
 
@@ -280,7 +282,7 @@ router.get('/microsoft/callback', handleMicrosoftCallback);
  * @swagger
  * /api/auth/setup-graduation:
  *   post:
- *     summary: Setup graduation date for user
+ *     summary: Setup graduation date for user (fallback for Microsoft users)
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -291,20 +293,60 @@ router.get('/microsoft/callback', handleMicrosoftCallback);
  *           schema:
  *             type: object
  *             required:
- *               - expectedGraduationDate
+ *               - generation
  *             properties:
- *               expectedGraduationDate:
- *                 type: string
- *                 format: date
+ *               generation:
+ *                 type: integer
+ *                 minimum: 8
+ *                 description: Generation number (used to calculate graduation date)
+ *                 example: 10
  *     responses:
  *       200:
  *         description: Graduation date set successfully
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Success'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Graduation date set successfully
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     email:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                     expectedGraduationDate:
+ *                       type: object
+ *                       properties:
+ *                         month:
+ *                           type: integer
+ *                           example: 12
+ *                         year:
+ *                           type: integer
+ *                           example: 2027
+ *       400:
+ *         description: Bad request - validation error or graduation date already set
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Generation number is required
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: User not found
  *         content:
  *           application/json:
  *             schema:
@@ -314,34 +356,131 @@ router.post('/setup-graduation', authenticateToken, setupGraduationDate);
 
 /**
  * @swagger
- * /api/auth/graduation-status:
+ * /api/auth/setup-needs:
  *   get:
- *     summary: Check graduation status
+ *     summary: Check what setup is needed for Microsoft users
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Graduation status retrieved
+ *         description: Setup requirements retrieved successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success:
+ *                 needsPassword:
  *                   type: boolean
- *                 hasGraduationDate:
+ *                   description: Whether the user needs to set up a password
+ *                 needsGraduationDate:
  *                   type: boolean
- *                 expectedGraduationDate:
- *                   type: string
- *                   format: date
+ *                   description: Whether the user needs to set up graduation date
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     email:
+ *                       type: string
+ *                     displayName:
+ *                       type: string
+ *                     isMicrosoftUser:
+ *                       type: boolean
+ *                     hasPassword:
+ *                       type: boolean
+ *                     expectedGraduationDate:
+ *                       type: object
+ *                       nullable: true
+ *                       properties:
+ *                         month:
+ *                           type: integer
+ *                         year:
+ *                           type: integer
  *       401:
  *         description: Unauthorized
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
-router.get('/graduation-status', authenticateToken, checkGraduationStatus);
+router.get('/setup-needs', authenticateToken, checkSetupNeeds);
+
+/**
+ * @swagger
+ * /api/auth/microsoft/setup-password:
+ *   post:
+ *     summary: Setup password for Microsoft authenticated users
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 description: The password to set for the Microsoft user account
+ *     responses:
+ *       200:
+ *         description: Password set successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Password set successfully
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     email:
+ *                       type: string
+ *                     role:
+ *                       type: string
+ *                     displayName:
+ *                       type: string
+ *                     hasPassword:
+ *                       type: boolean
+ *                       example: true
+ *       400:
+ *         description: Bad request - validation error or password already set
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Password is required
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/microsoft/setup-password', authenticateToken, setupPasswordForMicrosoft);
 
 export default router;

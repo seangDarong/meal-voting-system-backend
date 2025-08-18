@@ -15,6 +15,22 @@ const validateSchoolEmail = (email) => {
     return email.toLowerCase().endsWith(SCHOOL_DOMAIN.toLowerCase());
 }
 
+// ===== USER CONTROLLER FUNCTIONS =====
+// 
+// Authentication Functions:
+// - verifyEmail, resendVerification, register, login, signOut
+// - requestPasswordReset, resetPasswordWithToken, changePassword
+//
+// User Management Functions:
+// - deactivateOwnAccount, getOwnProfile
+//
+// Microsoft Authentication Functions:
+// - microsoftAuthStrategy, handleMicrosoftCallback
+// - setupPasswordForMicrosoft, setupGraduationDate, checkSetupNeeds
+//
+
+// ===== EMAIL VERIFICATION & BASIC AUTH =====
+
 export const verifyEmail = async (req, res) => {
     try {
         const { token } = req.query;
@@ -92,11 +108,11 @@ export const resendVerification = async (req, res) => {
 
 export const register = async (req, res) => {
     try {
-        const { email, password, expectedGraduationMonth, expectedGraduationYear } = req.body;
+        const { email, password, generation } = req.body;
         
         // Validate required fields
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password are required' });
+        if (!email || !password || !generation) {
+            return res.status(400).json({ error: 'Email, password, and generation are required' });
         }
         
         if (password.length < 6) {
@@ -109,35 +125,18 @@ export const register = async (req, res) => {
             return res.status(400).json({ error: 'Only school email are allowed' });
         }
 
-        // Validate and parse graduation date (optional)
-        let expectedGraduationDate = null;
-        if (expectedGraduationMonth && expectedGraduationYear) {
-            const month = parseInt(expectedGraduationMonth);
-            const year = parseInt(expectedGraduationYear);
-            
-            // Validate month (1-12)
-            if (month < 1 || month > 12) {
-                return res.status(400).json({ 
-                    error: 'Invalid graduation month. Please enter a value between 1 and 12' 
-                });
-            }
-            
-            // Validate year (current year to current year + 10)
-            const currentYear = new Date().getFullYear();
-            if (year < currentYear || year > currentYear + 10) {
-                return res.status(400).json({ 
-                    error: `Invalid graduation year. Please enter a year between ${currentYear} and ${currentYear + 10}` 
-                });
-            }
-            
-            // Create date object (set to first day of graduation month)
-            expectedGraduationDate = new Date(year, month - 1, 1);
-        } else if (expectedGraduationMonth || expectedGraduationYear) {
-            // If only one is provided, require both
-            return res.status(400).json({ 
-                error: 'Both graduation month and year are required if providing graduation date' 
-            });
+        // Validate generation
+        const generationNumber = parseInt(generation);
+        if (isNaN(generationNumber) || generationNumber < 8) {
+            return res.status(400).json({ error: 'Generation must be a number starting from 8' });
         }
+
+        // Calculate expected graduation date based on generation
+        // Formula: Generation number + 2017 = graduation year
+        // Month: December (12), Day: 1
+        const graduationYear = generationNumber + 2017;
+        const expectedGraduationDate = new Date(graduationYear, 11, 1); // Month 11 = December (0-indexed)
+
 
         // Check if user already exists
         const existingUser = await User.findOne({ where: { email: normalizedEmail } });
@@ -208,6 +207,7 @@ export const register = async (req, res) => {
             data: {
                 userId: user.id,
                 email: user.email,
+                generation: generationNumber,
                 expectedGraduationDate: expectedGraduationDate ? {
                     month: expectedGraduationDate.getMonth() + 1,
                     year: expectedGraduationDate.getFullYear()
@@ -233,7 +233,23 @@ export const login = async (req, res) => {
             });
         }
 
-        // Check password first (always verify for security)
+        // Check if this is a Microsoft user without password
+        if (user.microsoftId && !user.password) {
+            return res.status(400).json({
+                success: false,
+                error: 'This account was created with Microsoft authentication. Please use "Sign in with Microsoft" or complete your account setup.',
+                isMicrosoftAccount: true
+            });
+        }
+
+        // Check password for regular users
+        if (!user.password) {
+            return res.status(401).json({ 
+                success: false,
+                error: 'Invalid credentials' 
+            });
+        }
+
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             return res.status(401).json({ 
@@ -539,7 +555,7 @@ export const changePassword = async (req, res) => {
     }
 };
 
-// Add this to the end of your user.js controller file
+// ===== USER MANAGEMENT FUNCTIONS =====
 
 export const deactivateOwnAccount = async (req, res) => {
     try {
@@ -648,50 +664,238 @@ export const getOwnProfile = async (req, res) => {
     }
 };
 
-// Add this function to your user controller
+// ===== MICROSOFT AUTHENTICATION FUNCTIONS =====
 
-
-// Add this function to your user controller
-
-export const setupGraduationDate = async (req, res) => {
+// Microsoft authentication strategy function (moved from app.js)
+export const microsoftAuthStrategy = async (accessToken, refreshToken, profile, done) => {
     try {
-        const { expectedGraduationMonth, expectedGraduationYear } = req.body;
+        console.log('Microsoft Profile:', profile);
+        
+        const email = profile.emails[0].value.toLowerCase();
+        const displayName = profile.displayName;
+        const jobTitle = profile._json?.jobTitle || '';
+        
+        // Check if email is from your school domain
+        if (!email.endsWith('@student.cadt.edu.kh') && !email.endsWith('@cadt.edu.kh')) {
+            return done(new Error('Only school email addresses are allowed'), null);
+        }
+        
+        // Extract generation from job title
+        let expectedGraduationDate = null;
+        const generationMatch = jobTitle.match(/Generation\s+(\d+)/i);
+        if (generationMatch) {
+            const generationNumber = parseInt(generationMatch[1]);
+            if (generationNumber >= 8) {
+                const graduationYear = generationNumber + 2017;
+                expectedGraduationDate = new Date(graduationYear, 11, 1); // December 1st
+            }
+        }
+        
+        // Check if user already exists
+        let user = await User.findOne({ where: { email: email } });
+        let isFirstTime = false;
+        let needsPassword = false;
+        
+        if (user) {
+            // Existing user - check if active
+            if (!user.isActive) {
+                if (user.role === 'voter') {
+                    // Reactivate voter account
+                    user.isActive = true;
+                    user.isVerified = true;
+                    await user.save();
+                } else {
+                    return done(new Error('Your account has been deactivated. Please contact an administrator.'), null);
+                }
+            }
+            
+            // Make sure existing user is verified
+            if (!user.isVerified) {
+                user.isVerified = true;
+                await user.save();
+            }
+            
+            // Update Microsoft ID and graduation date if not set
+            if (!user.microsoftId) {
+                user.microsoftId = profile.id;
+                user.displayName = displayName;
+                if (expectedGraduationDate && !user.expectedGraduationDate) {
+                    user.expectedGraduationDate = expectedGraduationDate;
+                }
+                await user.save();
+            }
+        } else {
+            // New user - create but mark as needing password
+            isFirstTime = true;
+            needsPassword = true;
+            
+            user = await User.create({
+                email: email,
+                password: null, // Will be set during password setup
+                role: 'voter',
+                isVerified: true,
+                isActive: true,
+                microsoftId: profile.id,
+                displayName: displayName,
+                expectedGraduationDate: expectedGraduationDate
+            });
+            
+            // Create wishlist for new user
+            await WishList.create({
+                userId: user.id,
+                dishId: null
+            });
+            
+            console.log('New Microsoft user created:', user.id);
+        }
+        
+        // Add flags to indicate what setup is needed
+        user.isFirstTimeLogin = isFirstTime;
+        user.needsPassword = needsPassword;
+        user.needsGraduationDate = !expectedGraduationDate;
+        
+        return done(null, user);
+    } catch (error) {
+        console.error('Microsoft auth error:', error);
+        return done(error, null);
+    }
+};
+
+// Microsoft callback handler (moved from app.js)
+export const handleMicrosoftCallback = async (req, res) => {
+    try {
+        // Generate JWT token for the user
+        const token = jwt.sign(
+            { 
+                id: req.user.id, 
+                email: req.user.email, 
+                role: req.user.role 
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+        
+        // Check what setup is needed
+        const needsPassword = req.user.needsPassword;
+        const needsGraduationDate = req.user.needsGraduationDate;
+        
+        if (needsPassword || needsGraduationDate) {
+            // Redirect to setup page with appropriate flags
+            const setupParams = new URLSearchParams({
+                token: token,
+                first_time: req.user.isFirstTimeLogin || false,
+                needs_password: needsPassword || false,
+                needs_graduation: needsGraduationDate || false
+            });
+            res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/setup-account?${setupParams.toString()}`);
+        } else {
+            // Normal login redirect
+            res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/auth/callback?token=${token}&provider=microsoft`);
+        }
+    } catch (error) {
+        console.error('Token generation error:', error);
+        res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/login?error=token_generation_failed`);
+    }
+};
+
+// Add this new endpoint for setting up password for Microsoft users
+export const setupPasswordForMicrosoft = async (req, res) => {
+    try {
+        const { password } = req.body;
         const userId = req.user.id;
         
-        // Validate required fields
-        if (!expectedGraduationMonth || !expectedGraduationYear) {
+        // Validate password
+        if (!password) {
             return res.status(400).json({ 
-                error: 'Both graduation month and year are required' 
+                error: 'Password is required' 
             });
         }
         
-        const month = parseInt(expectedGraduationMonth);
-        const year = parseInt(expectedGraduationYear);
-        
-        // Validate month (1-12)
-        if (month < 1 || month > 12) {
+        if (password.length < 6) {
             return res.status(400).json({ 
-                error: 'Invalid graduation month. Please enter a value between 1 and 12' 
+                error: 'Password must be at least 6 characters long' 
             });
         }
         
-        // Validate year (current year to current year + 10)
-        const currentYear = new Date().getFullYear();
-        if (year < currentYear || year > currentYear + 10) {
-            return res.status(400).json({ 
-                error: `Invalid graduation year. Please enter a year between ${currentYear} and ${currentYear + 10}` 
-            });
-        }
-        
-        // Create date object (set to first day of graduation month)
-        const expectedGraduationDate = new Date(year, month - 1, 1);
-        
-        // Update user's graduation date
+        // Find the user
         const user = await User.findByPk(userId);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
         
+        // Check if user is a Microsoft user without password
+        if (!user.microsoftId) {
+            return res.status(400).json({ 
+                error: 'This endpoint is only for Microsoft authentication users' 
+            });
+        }
+        
+        if (user.password) {
+            return res.status(400).json({ 
+                error: 'Password is already set for this account' 
+            });
+        }
+        
+        // Hash and set password
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user.password = hashedPassword;
+        await user.save();
+        
+        res.json({
+            message: 'Password set successfully',
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                displayName: user.displayName,
+                hasPassword: true
+            }
+        });
+        
+    } catch (error) {
+        console.error('Setup password error:', error);
+        res.status(500).json({ error: 'Error setting password' });
+    }
+};
+
+// Setup graduation date (fallback for cases where jobTitle doesn't contain generation info)
+export const setupGraduationDate = async (req, res) => {
+    try {
+        const { generation } = req.body;
+        const userId = req.user.id;
+        
+        // Find the user
+        const user = await User.findByPk(userId);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        // Check if graduation date is already set
+        if (user.expectedGraduationDate) {
+            return res.status(400).json({ 
+                error: 'Graduation date is already set for this account' 
+            });
+        }
+        
+        // Validate generation
+        if (!generation) {
+            return res.status(400).json({ 
+                error: 'Generation number is required' 
+            });
+        }
+        
+        const generationNumber = parseInt(generation);
+        if (isNaN(generationNumber) || generationNumber < 8) {
+            return res.status(400).json({ 
+                error: 'Generation must be a number starting from 8' 
+            });
+        }
+        
+        // Calculate graduation date
+        const graduationYear = generationNumber + 2017;
+        const expectedGraduationDate = new Date(graduationYear, 11, 1); // December 1st
+        
+        // Update user's graduation date
         user.expectedGraduationDate = expectedGraduationDate;
         await user.save();
         
@@ -701,10 +905,9 @@ export const setupGraduationDate = async (req, res) => {
                 id: user.id,
                 email: user.email,
                 role: user.role,
-                displayName: user.displayName,
                 expectedGraduationDate: {
-                    month: month,
-                    year: year
+                    month: expectedGraduationDate.getMonth() + 1,
+                    year: expectedGraduationDate.getFullYear()
                 }
             }
         });
@@ -715,48 +918,8 @@ export const setupGraduationDate = async (req, res) => {
     }
 };
 
-// Add validation endpoint for Microsoft callback
-export const handleMicrosoftCallback = async (req, res) => {
-    try {
-        const { token } = req.query;
-        
-        if (!token) {
-            return res.status(400).json({ error: 'No token provided' });
-        }
-        
-        // Verify the token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findByPk(decoded.id);
-        
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        
-        res.json({
-            message: 'Microsoft authentication successful',
-            token: token,
-            user: {
-                id: user.id,
-                email: user.email,
-                role: user.role,
-                displayName: user.displayName,
-                isVerified: user.isVerified,
-                expectedGraduationDate: user.expectedGraduationDate ? {
-                    month: user.expectedGraduationDate.getMonth() + 1,
-                    year: user.expectedGraduationDate.getFullYear()
-                } : null,
-                provider: 'microsoft'
-            }
-        });
-        
-    } catch (error) {
-        console.error('Microsoft callback error:', error);
-        res.status(500).json({ error: 'Authentication failed' });
-    }
-};
-
-// Add endpoint to check if graduation date is needed
-export const checkGraduationStatus = async (req, res) => {
+// Add endpoint to check what setup is needed for Microsoft users
+export const checkSetupNeeds = async (req, res) => {
     try {
         const userId = req.user.id;
         const user = await User.findByPk(userId);
@@ -765,14 +928,18 @@ export const checkGraduationStatus = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
         
+        const needsPassword = user.microsoftId && !user.password;
         const needsGraduationDate = !user.expectedGraduationDate;
         
         res.json({
+            needsPassword,
             needsGraduationDate,
             user: {
                 id: user.id,
                 email: user.email,
                 displayName: user.displayName,
+                isMicrosoftUser: !!user.microsoftId,
+                hasPassword: !!user.password,
                 expectedGraduationDate: user.expectedGraduationDate ? {
                     month: user.expectedGraduationDate.getMonth() + 1,
                     year: user.expectedGraduationDate.getFullYear()
@@ -781,7 +948,7 @@ export const checkGraduationStatus = async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Check graduation status error:', error);
-        res.status(500).json({ error: 'Error checking graduation status' });
+        console.error('Check setup needs error:', error);
+        res.status(500).json({ error: 'Error checking setup requirements' });
     }
 };
