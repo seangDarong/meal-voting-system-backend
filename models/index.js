@@ -44,6 +44,12 @@ CandidateDishHistory.belongsTo(Dish, { foreignKey: 'dishId' });
 
 Dish.hasMany(CandidateDish, { foreignKey: 'dishId', onDelete: 'CASCADE' });
 CandidateDish.belongsTo(Dish, { foreignKey: 'dishId' });
+// add a new column to make it have erraltionship with dishId and VotePollId
+Dish.hasMany(Vote, { foreignKey: 'dishId', onDelete: 'CASCADE' });
+Vote.belongsTo(Dish, { foreignKey: 'dishId' });
+
+VotePoll.hasMany(Vote, { foreignKey: 'votePollId', onDelete: 'CASCADE' });
+Vote.belongsTo(VotePoll, { foreignKey: 'votePollId' });
 
 
 const db = {

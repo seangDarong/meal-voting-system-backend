@@ -109,6 +109,15 @@ export const getActiveVotePoll = async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error cannot get active vote poll' });
     }
 };
+
+export const getTodayVoteResult = async (req,res) => {
+    try{
+        
+    }catch(error){
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error cannot get vote result.' });
+    }
+}
