@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../models/index.js';
 import cloudinary from '../utils/cloudinary.js';
+import { uploadImageToR2, deleteImageFromR2 } from '../utils/r2.js';
+
 import { Op } from 'sequelize';
 const Dish = db.Dish;
 
@@ -42,6 +44,19 @@ export const addDish = async (req, res) => {
             });
         }
 
+        //Upload to R2
+        try{
+            const res = await uploadImageToR2(imageFile, 'image');
+        } catch(error){
+            if (error) reject(error);
+        }
+
+        const uploadR2 = () => {
+            return new Promise((resolve, reject) => {
+                uploadImageToR2(imageFile, 'image');
+            })
+        }
+
         // Upload image to Cloudinary
         const uploadToCloudinary = () => {
             return new Promise((resolve, reject) => {
@@ -58,6 +73,7 @@ export const addDish = async (req, res) => {
 
         const result = await uploadToCloudinary();
 
+        const res = await uploadR2();
         // Save dish to database
         const newDish = await Dish.create({
             name,
@@ -67,7 +83,7 @@ export const addDish = async (req, res) => {
             ingredient_kh,
             description,
             description_kh,
-            imageURL: result.secure_url,
+            imageURL: res,
             userId
         });
 

@@ -5,6 +5,9 @@
   "main": "app.js",
   "type": "module",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.864.0",
+    "@aws-sdk/s3-request-presigner": "^3.864.0",
+    "aws-sdk": "^2.1692.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
@@ -21,6 +24,7 @@
     "passport-microsoft": "^2.1.0",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
+    "resend": "^6.0.1",
     "sequelize": "^6.37.7",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
