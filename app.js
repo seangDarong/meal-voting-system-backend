@@ -13,9 +13,11 @@ import {serveSwagger, setupSwagger} from "./config/swagger.js";
 import categoryRoutes from './routes/category.js'
 import adminRoutes from './routes/admin.js';
 import wishesRoutes from './routes/wishes.js';
-import microsoftRoutes from './routes/microsoft.js'; // Add this import
-import { microsoftAuthStrategy } from './controllers/user.js';
+import microsoftRoutes from './routes/microsoft.js'; 
+import { microsoftAuthStrategy, googleAuthStrategy } from './controllers/user.js';
 import userRoutes from './routes/user.js';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import googleRoutes from './routes/google.js'; 
 
 dotenv.config();
 
@@ -25,7 +27,7 @@ app.use(session({ secret: "SECRET", resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Use the strategy from controller
+
 passport.use(new MicrosoftStrategy({
     clientID: process.env.MS_CLIENT_ID,
     clientSecret: process.env.MS_CLIENT_SECRET,
@@ -33,6 +35,12 @@ passport.use(new MicrosoftStrategy({
     scope: ['user.read'],
     tenant: process.env.MS_TENANT_ID
 }, microsoftAuthStrategy));
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: "http://localhost:3000/auth/google/callback"
+}, googleAuthStrategy));
 
 passport.serializeUser((user, done) => done(null, user.id));
 passport.deserializeUser(async (id, done) => {
@@ -61,7 +69,8 @@ app.use('/api/categories', categoryRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishes', wishesRoutes);
 app.use('./api/user', userRoutes);
-app.use('/auth/microsoft', microsoftRoutes); // Add this line
+app.use('/auth/microsoft', microsoftRoutes); 
+app.use('/auth/google', googleRoutes)
 
 app.get('/', (req, res) => {
     res.send('Meal Voting API');
@@ -69,7 +78,7 @@ app.get('/', (req, res) => {
 
 // Sync DB
 try {
-    await db.sequelize.sync({force: false}); // Changed from force: true to preserve data
+    await db.sequelize.sync({force: true}); // Changed from force: true to preserve data
     console.log('Database synced');
 } catch (err) {
     console.error('DB sync failed:', err);

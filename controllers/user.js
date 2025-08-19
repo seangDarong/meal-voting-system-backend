@@ -9,23 +9,6 @@ const User = db.User;
 
 
 
-// ===== USER CONTROLLER FUNCTIONS =====
-// 
-// Authentication Functions:
-// - verifyEmail, resendVerification, register, login, signOut
-// - requestPasswordReset, resetPasswordWithToken, changePassword
-//
-// User Management Functions:
-// - deactivateOwnAccount, getOwnProfile
-//
-// Microsoft Authentication Functions:
-// - microsoftAuthStrategy, handleMicrosoftCallback
-// - setupPasswordForMicrosoft, setupGraduationDate, checkSetupNeeds
-//
-
-// ===== EMAIL VERIFICATION & BASIC AUTH =====
-
-
 
 export const signOut = (req, res) => {
     res.json({ message: 'Sign out successful' });
@@ -141,39 +124,88 @@ export const getOwnProfile = async (req, res) => {
     }
 };
 
-// ===== MICROSOFT AUTHENTICATION FUNCTIONS =====
+export const googleAuthStrategy = async (accessToken, refreshToken, profile, done) => {
+    try {
+        const email = profile.emails[0].value.toLowerCase();
+        const displayName = profile.displayName;
+        let user = await db.User.findOne({ where: { email } });
 
-// Microsoft authentication strategy function (moved from app.js)
+        if (!user) {
+            user = await db.User.create({
+                email,
+                role: 'voter',
+                isVerified: true,
+                isActive: true,
+                googleId: profile.id,
+                displayName
+            });
+            await WishList.create({ userId: user.id, dishId: null });
+        } else {
+            if (!user.isActive) {
+                user.isActive = true;
+                user.isVerified = true;
+                await user.save();
+            }
+            if (!user.googleId) {
+                user.googleId = profile.id;
+                user.displayName = displayName;
+                await user.save();
+            }
+        }
+        return done(null, user);
+    } catch (error) {
+        return done(error, null);
+    }
+};
+
+
+
+export const handleGoogleCallback = async (req, res) => {
+    try {
+        const token = jwt.sign(
+            { id: req.user.id, email: req.user.email, role: req.user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+        // If graduation date is missing, redirect to setup page
+        if (!req.user.expectedGraduationDate) {
+            const setupParams = new URLSearchParams({
+                token: token,
+                needs_graduation: true,
+                provider: 'google'
+            });
+            return res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/setup-account?${setupParams.toString()}`);
+        }
+        // Otherwise, normal callback
+        res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/auth/callback?token=${token}&provider=google`);
+    } catch (error) {
+        res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/login?error=token_generation_failed`);
+    }
+};
+
+// MICROSOFT STRATEGY
 export const microsoftAuthStrategy = async (accessToken, refreshToken, profile, done) => {
     try {
-        console.log('Microsoft Profile:', profile);
-        
         const email = profile.emails[0].value.toLowerCase();
         const displayName = profile.displayName;
         const jobTitle = profile._json?.jobTitle || '';
-        
-        
-        // Extract generation from job title
         let expectedGraduationDate = null;
         const generationMatch = jobTitle.match(/Generation\s+(\d+)/i);
         if (generationMatch) {
             const generationNumber = parseInt(generationMatch[1]);
             if (generationNumber >= 8) {
                 const graduationYear = generationNumber + 2017;
-                expectedGraduationDate = new Date(graduationYear, 11, 1); // December 1st
+                expectedGraduationDate = new Date(graduationYear, 11, 1);
             }
         }
-        
-        // Check if user already exists
-        let user = await User.findOne({ where: { email: email } });
+
+        let user = await db.User.findOne({ where: { email } });
         let isFirstTime = false;
         let needsPassword = false;
-        
+
         if (user) {
-            // Existing user - check if active
             if (!user.isActive) {
                 if (user.role === 'voter') {
-                    // Reactivate voter account
                     user.isActive = true;
                     user.isVerified = true;
                     await user.save();
@@ -181,14 +213,10 @@ export const microsoftAuthStrategy = async (accessToken, refreshToken, profile, 
                     return done(new Error('Your account has been deactivated. Please contact an administrator.'), null);
                 }
             }
-            
-            // Make sure existing user is verified
             if (!user.isVerified) {
                 user.isVerified = true;
                 await user.save();
             }
-            
-            // Update Microsoft ID and graduation date if not set
             if (!user.microsoftId) {
                 user.microsoftId = profile.id;
                 user.displayName = displayName;
@@ -198,122 +226,83 @@ export const microsoftAuthStrategy = async (accessToken, refreshToken, profile, 
                 await user.save();
             }
         } else {
-            // New user - create but mark as needing password
             isFirstTime = true;
             needsPassword = true;
-            
-            user = await User.create({
-                email: email,
-                password: null, // Will be set during password setup
+            user = await db.User.create({
+                email,
+                password: null,
                 role: 'voter',
                 isVerified: true,
                 isActive: true,
                 microsoftId: profile.id,
-                displayName: displayName,
-                expectedGraduationDate: expectedGraduationDate
+                displayName,
+                expectedGraduationDate
             });
-            
-            // Create wishlist for new user
-            await WishList.create({
-                userId: user.id,
-                dishId: null
-            });
-            
-            console.log('New Microsoft user created:', user.id);
+            await WishList.create({ userId: user.id, dishId: null });
         }
-        
-        // Add flags to indicate what setup is needed
+
         user.isFirstTimeLogin = isFirstTime;
         user.needsPassword = needsPassword;
         user.needsGraduationDate = !expectedGraduationDate;
-        
+
         return done(null, user);
     } catch (error) {
-        console.error('Microsoft auth error:', error);
         return done(error, null);
     }
 };
 
-// Microsoft callback handler (moved from app.js)
 export const handleMicrosoftCallback = async (req, res) => {
     try {
-        // Generate JWT token for the user
         const token = jwt.sign(
-            { 
-                id: req.user.id, 
-                email: req.user.email, 
-                role: req.user.role 
-            },
+            { id: req.user.id, email: req.user.email, role: req.user.role },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
-        
-        // Check what setup is needed
-        const needsPassword = req.user.needsPassword;
-        const needsGraduationDate = req.user.needsGraduationDate;
-        
-        if (needsPassword || needsGraduationDate) {
-            // Redirect to setup page with appropriate flags
+        // If graduation date is missing, redirect to setup page
+        if (!req.user.expectedGraduationDate) {
             const setupParams = new URLSearchParams({
                 token: token,
-                first_time: req.user.isFirstTimeLogin || false,
-                needs_password: needsPassword || false,
-                needs_graduation: needsGraduationDate || false
+                needs_graduation: true,
+                provider: 'microsoft'
             });
-            res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/setup-account?${setupParams.toString()}`);
-        } else {
-            // Normal login redirect
-            res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/auth/callback?token=${token}&provider=microsoft`);
+            return res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/setup-account?${setupParams.toString()}`);
         }
+        // Otherwise, normal callback
+        res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/auth/callback?token=${token}&provider=microsoft`);
     } catch (error) {
-        console.error('Token generation error:', error);
         res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/login?error=token_generation_failed`);
     }
 };
 
-
-
-// Setup graduation date (fallback for cases where jobTitle doesn't contain generation info)
 export const setupGraduationDate = async (req, res) => {
     try {
         const { generation } = req.body;
         const userId = req.user.id;
-        
+
         // Find the user
         const user = await User.findByPk(userId);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-        
-        // Check if graduation date is already set
-        if (user.expectedGraduationDate) {
-            return res.status(400).json({ 
-                error: 'Graduation date is already set for this account' 
-            });
-        }
-        
+
         // Validate generation
         if (!generation) {
-            return res.status(400).json({ 
-                error: 'Generation number is required' 
-            });
+            return res.status(400).json({ error: 'Generation number is required' });
         }
-        
+
         const generationNumber = parseInt(generation);
         if (isNaN(generationNumber) || generationNumber < 8) {
-            return res.status(400).json({ 
-                error: 'Generation must be a number starting from 8' 
-            });
+            return res.status(400).json({ error: 'Generation must be a number starting from 8' });
         }
-        
+
         // Calculate graduation date
         const graduationYear = generationNumber + 2017;
         const expectedGraduationDate = new Date(graduationYear, 11, 1); // December 1st
-        
+
         // Update user's graduation date
         user.expectedGraduationDate = expectedGraduationDate;
         await user.save();
-        
+
         res.json({
             message: 'Graduation date set successfully',
             user: {
@@ -326,10 +315,9 @@ export const setupGraduationDate = async (req, res) => {
                 }
             }
         });
-        
+
     } catch (error) {
         console.error('Setup graduation date error:', error);
         res.status(500).json({ error: 'Error setting graduation date' });
     }
 };
-
