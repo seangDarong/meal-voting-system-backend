@@ -94,10 +94,9 @@ export const deactivateOwnAccount = async (req, res) => {
 export const getOwnProfile = async (req, res) => {
     try {
         const userId = req.user.id;
-
         // Find the user and exclude sensitive information
         const user = await User.findByPk(userId, {
-            attributes: ['id', 'email', 'role', 'isVerified', 'isActive', 'createdAt', 'updatedAt']
+            attributes: ['id', 'email', 'role', 'isVerified', 'isActive', 'displayName', 'createdAt', 'updatedAt']
         });
 
         if (!user) {

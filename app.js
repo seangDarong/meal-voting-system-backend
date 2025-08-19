@@ -68,7 +68,7 @@ app.use('/api/vote-option', canteenRoutes);
 app.use('/api/categories', categoryRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishes', wishesRoutes);
-app.use('./api/user', userRoutes);
+app.use('/api/user', userRoutes);
 app.use('/auth/microsoft', microsoftRoutes); 
 app.use('/auth/google', googleRoutes)
 
