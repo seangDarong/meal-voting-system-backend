@@ -1,7 +1,6 @@
 import express from 'express';
 import { 
     signOut,
-    changePassword,
     deactivateOwnAccount,
     getOwnProfile
 } from '../controllers/user.js';
@@ -46,52 +45,6 @@ const router = express.Router();
  */
 router.get('/profile', authenticateToken, getOwnProfile);
 
-/**
- * @swagger
- * /api/user/change-password:
- *   put:
- *     summary: Change user password
- *     tags: [User]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - currentPassword
- *               - newPassword
- *             properties:
- *               currentPassword:
- *                 type: string
- *                 description: Current password
- *               newPassword:
- *                 type: string
- *                 minLength: 6
- *                 description: New password
- *     responses:
- *       200:
- *         description: Password changed successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Success'
- *       400:
- *         description: Invalid current password or validation error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-router.put('/change-password', authenticateToken, changePassword);
 
 /**
  * @swagger
