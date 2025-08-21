@@ -14,7 +14,7 @@ export const uploadImageToR2 = async(file, type) => {
         const bucketName = process.env.R2_BUCKET_NAME;
 
         if (!bucketName || !process.env.R2_PUBLIC_URL) {
-        throw new Error("Missing R2 configuration");
+            throw new Error("Missing R2 configuration");
         }
 
         const fileKey = `${type}/${Date.now()}_${file.originalname}`;

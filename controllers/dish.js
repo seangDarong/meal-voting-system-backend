@@ -44,17 +44,12 @@ export const addDish = async (req, res) => {
             });
         }
 
-        //Upload to R2
-        try{
-            const res = await uploadImageToR2(imageFile, 'image');
-        } catch(error){
-            if (error) reject(error);
-        }
-
-        const uploadR2 = () => {
-            return new Promise((resolve, reject) => {
-                uploadImageToR2(imageFile, 'image');
-            })
+        let imageURL;
+        try {
+            imageURL = await uploadImageToR2(imageFile, 'dishes');
+        } catch(error) {
+            console.error("Error uploading to R2:", error);
+            return res.status(500).json({ error: 'Failed to upload image' });
         }
 
         // Upload image to Cloudinary
@@ -72,8 +67,6 @@ export const addDish = async (req, res) => {
         };
 
         const result = await uploadToCloudinary();
-
-        const res = await uploadR2();
         // Save dish to database
         const newDish = await Dish.create({
             name,
@@ -83,7 +76,7 @@ export const addDish = async (req, res) => {
             ingredient_kh,
             description,
             description_kh,
-            imageURL: res,
+            imageURL: imageURL,
             userId
         });
 
@@ -122,22 +115,45 @@ export const updateDish = async (req, res) => {
             if (nameExists) return res.status(400).json({ error: "Dish name must be unique" });
         }
 
+        // let imageURL = dish.imageURL;
+        // if (imageFile) {
+        //     const uploadToCloudinary = () => {
+        //         return new Promise((resolve, reject) => {
+        //             const stream = cloudinary.uploader.upload_stream(
+        //                 { folder: 'Dishes', public_id: dish.id, resource_type: 'image', overwrite: true },
+        //                 (error, result) => {
+        //                     if (error) reject(error);
+        //                     else resolve(result);
+        //                 }
+        //             );
+        //             stream.end(imageFile.buffer);
+        //         });
+        //     };
+        //     const result = await uploadToCloudinary();
+        //     imageURL = result.secure_url;
+        // }
+
         let imageURL = dish.imageURL;
         if (imageFile) {
-            const uploadToCloudinary = () => {
-                return new Promise((resolve, reject) => {
-                    const stream = cloudinary.uploader.upload_stream(
-                        { folder: 'Dishes', public_id: dish.id, resource_type: 'image', overwrite: true },
-                        (error, result) => {
-                            if (error) reject(error);
-                            else resolve(result);
-                        }
-                    );
-                    stream.end(imageFile.buffer);
-                });
-            };
-            const result = await uploadToCloudinary();
-            imageURL = result.secure_url;
+            try {
+                // First delete the old image from R2 if it exists
+                if (dish.imageURL) {
+                    try {
+                        const urlParts = dish.imageURL.split('/');
+                        const key = urlParts.slice(3).join('/'); // Remove the domain parts
+                        await deleteImageFromR2(key);
+                    } catch (error) {
+                        console.error("Error deleting old image from R2:", error);
+                        // Continue with upload even if deletion fails
+                    }
+                }
+                
+                // Upload new image to R2
+                imageURL = await uploadImageToR2(imageFile, 'dishes');
+            } catch(error) {
+                console.error("Error uploading to R2:", error);
+                return res.status(500).json({ error: 'Failed to upload image' });
+            }
         }
 
         await dish.update({
@@ -212,7 +228,16 @@ export const deleteDish = async (req, res) => {
         const dish = await Dish.findByPk(dishId);
         if (!dish) return res.status(404).json({ error: "Dish not found" });
 
-        await cloudinary.uploader.destroy(`Dishes/${dish.id}`, { resource_type: 'image' });
+        // await cloudinary.uploader.destroy(`Dishes/${dish.id}`, { resource_type: 'image' });
+        if (dish.imageURL) {
+            try {
+                const urlParts = dish.imageURL.split('/');
+                const key = urlParts.slice(3).join('/');
+                await deleteImageFromR2(key);
+            } catch (error) {
+                console.error("Error deleting image from R2:", error);
+            }
+        }
 
         await dish.destroy();
         return res.status(200).json({ message: "Dish deleted successfully" });
