@@ -2,7 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import db from './models/index.js';
+//routes
 import dishRoutes from './routes/dish.js'
+import resultRoutes from './routes/result.js'
 import passport from 'passport';
 import session from 'express-session';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft'; // Fix this import
@@ -69,6 +71,7 @@ app.use('/api/vote-option', canteenRoutes);
 app.use('/api/categories', categoryRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishes', wishesRoutes);
+app.use('/api/results',resultRoutes);
 
 app.get('/', (req, res) => {
     res.send('Meal Voting API');
@@ -76,7 +79,7 @@ app.get('/', (req, res) => {
 
 // Sync DB
 try {
-    await db.sequelize.sync(); // Removed force: true to preserve data
+    await db.sequelize.sync({force: false}); // Removed force: true to preserve data
     console.log('Database synced');
 } catch (err) {
     console.error('DB sync failed:', err);
