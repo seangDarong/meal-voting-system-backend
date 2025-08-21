@@ -55,36 +55,48 @@ router.get('/mine', authenticateToken, getMyWish);
  * @swagger
  * /api/wishes/all:
  *   get:
- *     summary: Get all dishes with wish counts
+ *     summary: View collective wish list status
  *     tags: [Wishes]
- *     security:
- *       - bearerAuth: []
+ *     description: >
+ *           Returns a paginated list of dishes with their total number of wishes.
+ *           Includes dishes with 0 wishes (due to LEFT JOIN).
+ *           Supports optional sorting by popularity (`totalWishes`) or by `name`.
  *     parameters:
- *       - in: query
- *         name: page
+ *       - name: page
+ *         in: query
+ *         required: false
  *         schema:
  *           type: integer
  *           default: 1
- *       - in: query
- *         name: limit
+ *           minimum: 1
+ *         description: Page number for pagination.
+ *       - name: limit
+ *         in: query
+ *         required: false
  *         schema:
  *           type: integer
  *           default: 10
- *       - in: query
- *         name: sortBy
+ *           maximum: 50
+ *         description: Number of items per page (max 50).
+ *       - name: sortBy
+ *         in: query
+ *         required: false
  *         schema:
  *           type: string
  *           enum: [totalWishes, name]
  *           default: totalWishes
- *       - in: query
- *         name: sortOrder
+ *         description: Field to sort by (popularity or name).
+ *       - name: sortOrder
+ *         in: query
+ *         required: false
  *         schema:
  *           type: string
  *           enum: [ASC, DESC]
  *           default: DESC
+ *         description: Sort direction.
  *     responses:
- *       200:
- *         description: List of dishes with wish counts
+ *       '200':
+ *         description: Successful response with dishes and pagination metadata.
  *         content:
  *           application/json:
  *             schema:
@@ -93,7 +105,26 @@ router.get('/mine', authenticateToken, getMyWish);
  *                 dishes:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/DishWish'
+ *                     type: object
+ *                     properties:
+ *                       dishId:
+ *                         type: integer
+ *                         example: 1
+ *                       name:
+ *                         type: string
+ *                         example: Fried Rice
+ *                       imageUrl:
+ *                         type: string
+ *                         example: https://example.com/fried_rice.jpg
+ *                       categoryId:
+ *                         type: integer
+ *                         example: 2
+ *                       categoryName:
+ *                         type: string
+ *                         example: Asian
+ *                       totalWishes:
+ *                         type: integer
+ *                         example: 15
  *                 pagination:
  *                   type: object
  *                   properties:
@@ -105,7 +136,7 @@ router.get('/mine', authenticateToken, getMyWish);
  *                       example: 5
  *                     totalItems:
  *                       type: integer
- *                       example: 45
+ *                       example: 50
  *                     itemsPerPage:
  *                       type: integer
  *                       example: 10
@@ -115,8 +146,19 @@ router.get('/mine', authenticateToken, getMyWish);
  *                     hasPrevPage:
  *                       type: boolean
  *                       example: false
- *       401:
- *         description: Unauthorized
+ *       '500':
+ *         description: Server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Server error
+ *                 error:
+ *                   type: string
+ *                   example: "Error details here"
  */
 router.get('/all', authenticateToken, getAllWishes);
 
