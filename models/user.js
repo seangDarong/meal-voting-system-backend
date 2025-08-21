@@ -15,6 +15,13 @@ const User = sequelize.define('User', {
             isEmail: true,
         },
     },
+    password: {
+        type: DataTypes.STRING,
+        allowNull: true, // Password can be null for OAuth users
+        validate: {
+            len: [6, 100], // Minimum length for password
+        },
+    },
     role: {
         type: DataTypes.ENUM('admin', 'staff', 'voter'),
         allowNull: false,
