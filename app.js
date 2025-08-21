@@ -10,7 +10,7 @@ import session from 'express-session';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import jwt from 'jsonwebtoken';
 import authRoutes from './routes/auth.js';
-import canteenRoutes from './routes/canteen.js';
+import votePollRoutes from './routes/votePoll.js';
 import {serveSwagger, setupSwagger} from "./config/swagger.js";
 import categoryRoutes from './routes/category.js'
 import adminRoutes from './routes/admin.js';
@@ -21,6 +21,7 @@ import userRoutes from './routes/user.js';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import googleRoutes from './routes/google.js'; 
 
+
 dotenv.config();
 
 const app = express();
@@ -28,6 +29,7 @@ const app = express();
 app.use(session({ secret: "SECRET", resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
+
 
 
 passport.use(new MicrosoftStrategy({
@@ -66,7 +68,7 @@ app.use('/docs', serveSwagger, setupSwagger);
 // Routes
 app.use('/api/dishes', dishRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/vote-option', canteenRoutes);
+app.use('/api/vote-option', votePollRoutes);
 app.use('/api/categories', categoryRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishes', wishesRoutes);

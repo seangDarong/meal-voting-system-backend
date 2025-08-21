@@ -20,22 +20,13 @@ export const authenticateToken = async (req, res, next) => {
         
         // Fetch user from database to get latest info and verify user exists
         const user = await User.findByPk(decoded.id, {
-            attributes: ['id', 'email', 'role', 'isVerified', 'isActive', 'createdAt', 'updatedAt']
+            attributes: ['id', 'email', 'role', 'isActive', 'createdAt', 'updatedAt']
         });
 
         if (!user) {
             return res.status(401).json({
                 success: false,
                 error: 'User not found. Token may be invalid.'
-            });
-        }
-
-        // Check if user is verified (unverified users cannot access protected routes)
-        if (!user.isVerified) {
-            return res.status(403).json({
-                success: false,
-                error: 'Email verification required. Please verify your email address to access this resource.',
-                needsVerification: true
             });
         }
 

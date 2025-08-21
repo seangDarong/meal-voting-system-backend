@@ -1,9 +1,9 @@
 import express from 'express';
-import {submitVoteOptions , getActiveVotePoll } from '../controllers/canteen.js';
+import {submitVoteOptions , getActiveVotePoll } from '../controllers/votePoll.js';
 import { authenticateToken } from '../middlewares/auth.js';
 import { authorizeRole } from '../middlewares/authorizeRole.js';
 
-const canteenRouter = express.Router();
+const votePollRouter = express.Router();
 
 /**
  * @swagger
@@ -85,8 +85,8 @@ const canteenRouter = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-canteenRouter.post('/',authenticateToken,authorizeRole('staff'),submitVoteOptions);
-canteenRouter.get('/active',getActiveVotePoll);
+votePollRouter.post('/',authenticateToken,authorizeRole('staff'),submitVoteOptions);
+votePollRouter.get('/active',getActiveVotePoll);
 
 
-export default canteenRouter;
+export default votePollRouter;

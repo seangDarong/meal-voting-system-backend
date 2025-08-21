@@ -1,5 +1,5 @@
 import express from 'express';
-import {getTodayVoteResult} from '../controllers/canteen.js';
+import {getTodayVoteResult} from '../controllers/votePoll.js';
 import { authenticateToken } from '../middlewares/auth.js';
 import { authorizeRole } from '../middlewares/authorizeRole.js';
 

@@ -2,9 +2,10 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
 
 const CandidateDish = sequelize.define('CandidateDish', {
-    isSelected : {
+    isSelected: {
         type: DataTypes.BOOLEAN,
-        defaultValue : false
+        allowNull: false,
+        defaultValue: false
     }
 });
 
