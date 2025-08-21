@@ -15,38 +15,14 @@ const User = sequelize.define('User', {
             isEmail: true,
         },
     },
-    password: {
-        type: DataTypes.STRING,
-        allowNull: true, // Allow null for Microsoft auth users
-    },
     role: {
         type: DataTypes.ENUM('admin', 'staff', 'voter'),
         allowNull: false,
         defaultValue: 'voter',
     },
-    isVerified: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-    },
     isActive: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
-    },
-    verificationToken: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    verificationExpires: {
-        type: DataTypes.DATE,
-        allowNull: true,
-    },
-    resetPasswordToken: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    resetPasswordExpires: {
-        type: DataTypes.DATE,
-        allowNull: true,
     },
     expectedGraduationDate: {
         type: DataTypes.DATE,
@@ -60,7 +36,11 @@ const User = sequelize.define('User', {
     displayName: { // Add display name from Microsoft
         type: DataTypes.STRING,
         allowNull: true,
-    }
+    },
+    googleId: {
+    type: DataTypes.STRING,
+    allowNull: true
+    },
 }, {
     timestamps: true,
 });
