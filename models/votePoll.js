@@ -12,6 +12,10 @@ const VotePoll = sequelize.define('VotePoll', {
     },
         userId: {
         type: DataTypes.UUID
+    },
+    status: {
+        type: DataTypes.ENUM('open','close','pending','finalized'),
+        defaultValue : 'pending'
     }
 });
 
