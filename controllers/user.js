@@ -7,13 +7,61 @@ import WishList from '../models/wishList.js';
 
 const User = db.User;
 
+export const staffLogin = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const normalizedEmail = email.toLowerCase().trim();
 
+        // Find user by email
+        const user = await User.findOne({ where: { email: normalizedEmail } });
 
+        // Check if user exists and is staff or admin
+        if (!user || (user.role !== 'staff' && user.role !== 'admin')) {
+            return res.status(401).json({ success: false, error: 'Invalid credentials or not a staff/admin account' });
+        }
+
+        // Check if account is active
+        if (!user.isActive) {
+            return res.status(403).json({ success: false, error: 'Account is deactivated. Please contact an administrator.' });
+        }
+
+        // Check password
+        if (!user.password) {
+            return res.status(401).json({ success: false, error: 'No password set for this account' });
+        }
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ success: false, error: 'Invalid credentials' });
+        }
+
+        // Generate JWT token
+        const token = jwt.sign(
+            { id: user.id, email: user.email, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        res.json({
+            success: true,
+            message: 'Login successful',
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                displayName: user.displayName,
+                isActive: user.isActive
+            }
+        });
+    } catch (error) {
+        console.error('Staff login error:', error);
+        res.status(500).json({ success: false, error: 'Error logging in' });
+    }
+};
 
 export const signOut = (req, res) => {
     res.json({ message: 'Sign out successful' });
 };
-
 
 // ===== USER MANAGEMENT FUNCTIONS =====
 
