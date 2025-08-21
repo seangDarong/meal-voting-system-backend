@@ -20,10 +20,6 @@ const User = sequelize.define('User', {
         allowNull: false,
         defaultValue: 'voter',
     },
-    isVerified: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-    },
     isActive: {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
