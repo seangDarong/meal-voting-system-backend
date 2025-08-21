@@ -1,4 +1,5 @@
 // controllers/voteController.js
+import Category from '../models/category.js';
 import db from '../models/index.js';
 import { Op } from 'sequelize';
 const VotePoll = db.VotePoll;
@@ -113,11 +114,64 @@ export const getActiveVotePoll = async (req, res) => {
     }
 };
 
-export const getTodayVoteResult = async (req,res) => {
-    try{
-        
-    }catch(error){
+
+export const getTodayVoteResult = async (req, res) => {
+    try {
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const poll = await VotePoll.findOne({
+            where: {
+                voteDate: { [Op.between]: [startOfDay, endOfDay] }
+            },
+            include: [
+                {
+                    model: CandidateDish,
+                    include: [Dish]
+                }
+            ]
+        });
+
+        if (!poll) {
+            return res.status(404).json({ error: "No active vote poll today" });
+        }
+
+        // Count votes per dishId
+        const votes = await Vote.findAll({
+            where: { votePollId: poll.id },
+            attributes: [
+                'dishId',
+                [db.sequelize.fn('COUNT', db.sequelize.col('dishId')), 'count']
+            ],
+            group: ['dishId']
+        });
+
+        // Map votes for easy lookup
+        const voteMap = {};
+        votes.forEach(v => {
+            voteMap[v.dishId] = parseInt(v.get('count'));
+        });
+
+        // Include all candidate dishes, even zero-vote dishes
+        const voteCounts = poll.CandidateDishes.map(cd => ({
+            dishId: cd.dishId,
+            name: cd.Dish.name,
+            category: cd.Dish.category,
+            image: cd.Dish.image,
+            count: voteMap[cd.dishId] || 0
+        }));
+
+        return res.status(200).json({
+            pollId: poll.id,
+            mealDate: poll.mealDate,
+            results: voteCounts
+        });
+
+    } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal server error cannot get vote result.' });
     }
-}
+};
