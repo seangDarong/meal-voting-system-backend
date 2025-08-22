@@ -101,7 +101,7 @@ export const removeWish = async (req, res) => {
     }
 };
 
-// get/api/wishes/all
+// GET /api/wishes/all
 export const getAllWishes = async (req, res) => {
     try {
         const { 
@@ -111,75 +111,60 @@ export const getAllWishes = async (req, res) => {
             sortOrder = 'DESC' 
         } = req.query;
 
-        const offset = (page - 1) * limit;
+        const parsedLimit = Math.min(parseInt(limit, 10) || 10, 50); // cap at 50
+        const offset = (parseInt(page, 10) - 1) * parsedLimit;
 
-        // Get all dishes
-        const allDishes = await Dish.findAndCountAll({
-            attributes: ['id', 'name', 'imageURL', 'categoryId'],
+        // Query dishes with wish counts (LEFT JOIN so dishes with 0 wishes still appear)
+        const { count, rows } = await Dish.findAndCountAll({
+            attributes: [
+                'id',
+                'name',
+                'imageURL',
+                'categoryId',
+                [db.sequelize.fn('COUNT', db.sequelize.col('WishLists.id')), 'totalWishes']
+            ],
             include: [
                 {
                     model: Category,
                     attributes: ['name']
+                },
+                {
+                    model: WishList,
+                    attributes: [],
+                    required: false // LEFT JOIN
                 }
             ],
-            limit: parseInt(limit),
-            offset: parseInt(offset)
-        });
-
-        // Get wish counts for all dishes
-        const wishCounts = await WishList.findAll({
-            attributes: [
-                'dishId',
-                [db.sequelize.fn('COUNT', db.sequelize.col('dishId')), 'count']
+            group: ['Dish.id', 'Category.id'],
+            order: [
+                sortBy === 'name' 
+                    ? ['name', sortOrder] 
+                    : [db.sequelize.literal('totalWishes'), sortOrder]
             ],
-            where: {
-                dishId: {
-                    [Op.ne]: null
-                }
-            },
-            group: ['dishId'],
-            raw: true
+            limit: parsedLimit,
+            offset
         });
 
-        // Create a map of dish wishes
-        const wishCountMap = {};
-        wishCounts.forEach(item => {
-            wishCountMap[item.dishId] = parseInt(item.count);
-        });
+        // Sequelize count with GROUP BY returns an array → use length for total
+        const totalItems = Array.isArray(count) ? count.length : count;
 
-        // Combine dishes with wish counts
-        let dishesWithWishes = allDishes.rows.map(dish => ({
+        // Transform result
+        const dishes = rows.map(dish => ({
             dishId: dish.id,
             name: dish.name,
             imageUrl: dish.imageURL,
             categoryId: dish.categoryId,
             categoryName: dish.Category ? dish.Category.name : null,
-            totalWishes: wishCountMap[dish.id] || 0
+            totalWishes: parseInt(dish.get('totalWishes'), 10) || 0
         }));
 
-        // Sort the results
-        if (sortBy === 'totalWishes') {
-            dishesWithWishes.sort((a, b) => {
-                return sortOrder === 'ASC' 
-                    ? a.totalWishes - b.totalWishes
-                    : b.totalWishes - a.totalWishes;
-            });
-        } else if (sortBy === 'name') {
-            dishesWithWishes.sort((a, b) => {
-                return sortOrder === 'ASC' 
-                    ? a.name.localeCompare(b.name)
-                    : b.name.localeCompare(a.name);
-            });
-        }
-
         res.json({
-            dishes: dishesWithWishes,
+            dishes,
             pagination: {
-                currentPage: parseInt(page),
-                totalPages: Math.ceil(allDishes.count / limit),
-                totalItems: allDishes.count,
-                itemsPerPage: parseInt(limit),
-                hasNextPage: page * limit < allDishes.count,
+                currentPage: parseInt(page, 10),
+                totalPages: Math.ceil(totalItems / parsedLimit),
+                totalItems,
+                itemsPerPage: parsedLimit,
+                hasNextPage: page * parsedLimit < totalItems,
                 hasPrevPage: page > 1
             }
         });

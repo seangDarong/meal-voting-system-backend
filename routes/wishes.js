@@ -19,35 +19,35 @@ const router = express.Router();
  * @swagger
  * /api/wishes/mine:
  *   get:
- *     summary: Get current user's wishlist
+ *     summary: Get current user's wish
  *     tags: [Wishes]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: User's wishlist retrieved successfully
+ *         description: Current user's wish retrieved
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   $ref: '#/components/schemas/WishList'
+ *                 dishId:
+ *                   type: integer
+ *                   example: 12
+ *                 dishName:
+ *                   type: string
+ *                   example: "Spicy Noodles"
+ *                 image:
+ *                   type: string
+ *                   example: "https://example.com/dishes/noodles.jpg"
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2025-08-21T12:34:56.000Z"
  *       404:
- *         description: Wishlist not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         description: Wish not found
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.get('/mine', authenticateToken, getMyWish);
 
@@ -55,39 +55,118 @@ router.get('/mine', authenticateToken, getMyWish);
  * @swagger
  * /api/wishes/all:
  *   get:
- *     summary: Get all wishlists
+ *     summary: View collective wish list status
  *     tags: [Wishes]
- *     security:
- *       - bearerAuth: []
+ *     description: >
+ *           Returns a paginated list of dishes with their total number of wishes.
+ *           Includes dishes with 0 wishes (due to LEFT JOIN).
+ *           Supports optional sorting by popularity (`totalWishes`) or by `name`.
+ *     parameters:
+ *       - name: page
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *           minimum: 1
+ *         description: Page number for pagination.
+ *       - name: limit
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 50
+ *         description: Number of items per page (max 50).
+ *       - name: sortBy
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [totalWishes, name]
+ *           default: totalWishes
+ *         description: Field to sort by (popularity or name).
+ *       - name: sortOrder
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *           enum: [ASC, DESC]
+ *           default: DESC
+ *         description: Sort direction.
  *     responses:
- *       200:
- *         description: All wishlists retrieved successfully
+ *       '200':
+ *         description: Successful response with dishes and pagination metadata.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
+ *                 dishes:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/WishList'
- *       401:
- *         description: Unauthorized
+ *                     type: object
+ *                     properties:
+ *                       dishId:
+ *                         type: integer
+ *                         example: 1
+ *                       name:
+ *                         type: string
+ *                         example: Fried Rice
+ *                       imageUrl:
+ *                         type: string
+ *                         example: https://example.com/fried_rice.jpg
+ *                       categoryId:
+ *                         type: integer
+ *                         example: 2
+ *                       categoryName:
+ *                         type: string
+ *                         example: Asian
+ *                       totalWishes:
+ *                         type: integer
+ *                         example: 15
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                       example: 1
+ *                     totalPages:
+ *                       type: integer
+ *                       example: 5
+ *                     totalItems:
+ *                       type: integer
+ *                       example: 50
+ *                     itemsPerPage:
+ *                       type: integer
+ *                       example: 10
+ *                     hasNextPage:
+ *                       type: boolean
+ *                       example: true
+ *                     hasPrevPage:
+ *                       type: boolean
+ *                       example: false
+ *       '500':
+ *         description: Server error.
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Server error
+ *                 error:
+ *                   type: string
+ *                   example: "Error details here"
  */
 router.get('/all', authenticateToken, getAllWishes);
 
 /**
  * @swagger
- * /wishes:
+ * /api/wishes:
  *   put:
- *     summary: Update user's wishlist
+ *     summary: Update current user's wish
  *     tags: [Wishes]
  *     security:
  *       - bearerAuth: []
@@ -102,58 +181,61 @@ router.get('/all', authenticateToken, getAllWishes);
  *             properties:
  *               dishId:
  *                 type: integer
- *                 description: ID of the dish to add to wishlist
+ *                 example: 7
  *     responses:
  *       200:
- *         description: Wishlist updated successfully
+ *         description: Wish updated
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
  *                 message:
  *                   type: string
- *                 data:
- *                   $ref: '#/components/schemas/WishList'
- *       400:
- *         description: Validation error
+ *                   example: "Wish updated"
+ *                 dishId:
+ *                   type: integer
+ *                   example: 7
+ *       403:
+ *         description: Cooldown active
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Error'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Cooldown active"
+ *                 cooldownRemaining:
+ *                   type: integer
+ *                   example: 1200
+ *       400:
+ *         description: Validation error (dishId missing)
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *
  *   delete:
- *     summary: Remove dish from user's wishlist
+ *     summary: Remove current user's wish
  *     tags: [Wishes]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Dish removed from wishlist successfully
+ *         description: Wish removed
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Success'
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Wish removed"
+ *       403:
+ *         description: Cooldown active
  *       404:
- *         description: Wishlist not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         description: Wish not found
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.put('/', authenticateToken, updateWish);
 router.delete('/', authenticateToken, removeWish);
