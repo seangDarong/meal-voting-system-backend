@@ -15,8 +15,10 @@ interface UserAttributes {
   updatedAt?: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'isActive' | 'createdAt' | 'updatedAt'> {}
-
+interface UserCreationAttributes extends Optional<UserAttributes, 
+  'id' | 'isActive' | 'createdAt' | 'updatedAt' | 
+  'password' | 'expectedGraduationDate' | 'microsoftId' | 'googleId' | 'displayName'
+> {}
 class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: string;
   public email!: string;

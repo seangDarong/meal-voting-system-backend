@@ -12,7 +12,7 @@ import CandidateDishHistory from '@/models/candidateDishHistory';
 
 //Association
 Category.hasMany(Dish,{foreignKey: 'categoryId',onDelete: 'CASCADE'});
-Dish.belongsTo(Category,{foreignKey: 'categoryId'});
+Dish.belongsTo(Category, { foreignKey: 'categoryId', as: 'category' });
 
 Dish.hasMany(CandidateDish,{foreignKey: 'dishId',onDelete: 'CASCADE'});
 CandidateDish.belongsTo(Dish,{foreignKey: 'dishId'});

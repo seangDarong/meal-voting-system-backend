@@ -3,23 +3,23 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import db from '@/models/index';
 //routes
-import dishRoutes from './routes/dish.js'
-import resultRoutes from './routes/result.js'
+// import dishRoutes from './routes/dish.js'
+// import resultRoutes from './routes/result.js'
 import passport from 'passport';
 import session from 'express-session';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import jwt from 'jsonwebtoken';
-import authRoutes from './routes/auth.js';
-import canteenRoutes from './routes/canteen.js';
+// import authRoutes from './routes/auth.js';
+// import canteenRoutes from './routes/canteen.js';
 import {serveSwagger, setupSwagger} from "./config/swagger.js";
-import categoryRoutes from './routes/category.js'
-import adminRoutes from './routes/admin.js';
-import wishesRoutes from './routes/wishes.js';
-import microsoftRoutes from './routes/microsoft.js'; 
-import { microsoftAuthStrategy, googleAuthStrategy } from './controllers/user.js';
-import userRoutes from './routes/user.js';
+// import categoryRoutes from './routes/category.js'
+// import adminRoutes from './routes/admin.js';
+// import wishesRoutes from './routes/wishes.js';
+// import microsoftRoutes from './routes/microsoft.js'; 
+import { microsoftAuthStrategy, googleAuthStrategy } from '@/controllers/user';
+// import userRoutes from './routes/user.js';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import googleRoutes from './routes/google.js'; 
+// import googleRoutes from './routes/google.js'; 
 
 dotenv.config();
 

@@ -1,10 +1,13 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import db from '../models/index.js';
-import { VotePollAttributes, VotePollCreationAttributes } from '../models/votePoll.js';
-import { CandidateDishAttributes, CandidateDishCreationAttributes } from '../models/candidateDish.js';
-import { VoteAttributes } from '../models/vote.js';
-import { DishAttributes } from '../models/dish.js';
+import db from '@/models/index';
+import { VotePollAttributes, VotePollCreationAttributes } from '@/models/votePoll';
+import { CandidateDishAttributes, CandidateDishCreationAttributes } from '@/models/candidateDish';
+import { VoteAttributes } from '@/models/vote';
+import { DishAttributes } from '@/models/dish';
+
+import { SubmitVoteOptionsRequest, GetActiveVotePollRequest, GetTodayVoteResultRequest } from '@/types/requests.js';
+
 
 const VotePoll = db.VotePoll;
 const CandidateDish = db.CandidateDish;
@@ -12,28 +15,6 @@ const Dish = db.Dish;
 const Vote = db.Vote;
 
 // Define interfaces for request objects
-interface SubmitVoteOptionsRequest extends Request {
-  body: {
-    mealDate: string;
-    dishIds: number[];
-  };
-  user: {
-    id: string;
-  };
-}
-
-interface GetActiveVotePollRequest extends Request {
-  user?: {
-    id: string;
-  };
-}
-
-interface GetTodayVoteResultRequest extends Request {
-  user?: {
-    id: string;
-  };
-}
-
 interface VotePollWithAssociations extends VotePollAttributes {
   CandidateDishes: (CandidateDishAttributes & {
     Dish: DishAttributes;
@@ -196,7 +177,7 @@ export const getTodayVoteResult = async (req: GetTodayVoteResultRequest, res: Re
     const voteCounts = poll.CandidateDishes.map(cd => ({
       dishId: cd.dishId,
       name: cd.Dish.name,
-      category: cd.Dish.category,
+      category: cd.Dish.categoryId,
       image: cd.Dish.imageURL,
       count: voteMap[cd.dishId] || 0
     }));
