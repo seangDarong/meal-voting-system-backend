@@ -81,113 +81,161 @@ export const submitVoteOptions = async (req, res) => {
   }
 };
 
-// Get active vote poll for today
 export const getActiveVotePoll = async (req, res) => {
   try {
-    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
 
-    // Set today's 6:00 AM
-    const startTime = new Date();
-    startTime.setHours(6, 0, 0, 0);
-
-    // Set today's 4:00 PM
-    const endTime = new Date();
-    endTime.setHours(16, 0, 0, 0);
-
-    // Find the poll that is active between 6 AM and 4 PM
     const poll = await VotePoll.findOne({
       where: {
         voteDate: {
-          [Op.between]: [startTime, endTime],
+          [Op.gte]: today,
+          [Op.lt]: tomorrow,
         },
+        status: "open",
       },
       include: [
         {
           model: CandidateDish,
           include: [Dish],
+          attributes: { exclude: ["createdAt", "updatedAt"] },
         },
       ],
+      attributes: { exclude: ["createdAt", "updatedAt"] },
     });
 
     if (!poll) {
-      return res.status(404).json({ error: "No active vote poll right now" });
+      return res.status(404).json({ message: "No open poll for today." });
     }
 
-    return res.status(200).json({
+    res.json({
       pollId: poll.id,
       mealDate: poll.mealDate,
+      voteDate: poll.voteDate,
       dishes: poll.CandidateDishes.map((cd) => ({
         candidateDishId: cd.id,
         isSelected: cd.isSelected,
         dish: cd.Dish,
       })),
     });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ error: "Internal server error cannot get active vote poll" });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 
 export const getTodayVoteResult = async (req, res) => {
   try {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
 
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-
+    // Find today's poll (open or closed)
     const poll = await VotePoll.findOne({
       where: {
-        voteDate: { [Op.between]: [startOfDay, endOfDay] },
+        voteDate: {
+          [Op.gte]: today,
+          [Op.lt]: tomorrow,
+        },
+        status: { [Op.in]: ["open", "close"] },
       },
       include: [
         {
           model: CandidateDish,
           include: [Dish],
+          attributes: { exclude: ["createdAt", "updatedAt"] },
         },
       ],
+      attributes: { exclude: ["createdAt", "updatedAt"] },
     });
 
     if (!poll) {
-      return res.status(404).json({ error: "No active vote poll today" });
+      return res.status(404).json({ message: "No poll for today." });
     }
 
-    // Count votes per dishId
-    const votes = await Vote.findAll({
-      where: { votePollId: poll.id },
-      attributes: [
-        "dishId",
-        [db.sequelize.fn("COUNT", db.sequelize.col("dishId")), "count"],
-      ],
-      group: ["dishId"],
-    });
+    // Count votes for each dish by dishId and votePollId
+    const dishesWithVotes = await Promise.all(
+      poll.CandidateDishes.map(async (cd) => {
+        const voteCount = await Vote.count({
+          where: {
+            dishId: cd.dishId,
+            votePollId: poll.id,
+          },
+        });
+        return {
+          candidateDishId: cd.id,
+          dishId: cd.dishId,
+          dish: cd.Dish,
+          voteCount,
+        };
+      })
+    );
 
-    // Map votes for easy lookup
-    const voteMap = {};
-    votes.forEach((v) => {
-      voteMap[v.dishId] = parseInt(v.get("count"));
-    });
-
-    // Include all candidate dishes, even zero-vote dishes
-    const voteCounts = poll.CandidateDishes.map((cd) => ({
-      dishId: cd.dishId,
-      name: cd.Dish.name,
-      category: cd.Dish.category,
-      image: cd.Dish.image,
-      count: voteMap[cd.dishId] || 0,
-    }));
-
-    return res.status(200).json({
-      pollId: poll.id,
+    res.json({
+      votePollId: poll.id,
       mealDate: poll.mealDate,
-      results: voteCounts,
+      voteDate: poll.voteDate,
+      voteStatus: poll.status,
+      dishes: dishesWithVotes,
     });
-  } catch (err) {
-    console.error(err);
-    res
-      .status(500)
-      .json({ error: "Internal server error cannot get vote result." });
+  } catch (error) {
+    console.error("Error in getTodayVoteResult:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const finalizedVotePoll = async (req, res) => {
+  try {
+    const pollId = req.params.id;
+    const { selectedDishIds } = req.body;
+
+    // Find poll and include candidate dishes
+    const poll = await VotePoll.findByPk(pollId, {
+      include: [{ model: CandidateDish }],
+    });
+
+    if (!poll) {
+      return res.status(404).json({
+        message: "Poll not found.",
+      });
+    }
+
+    if (poll.status !== "close") {
+      return res.status(400).json({
+        message: "Only closed votePoll can be finalized.",
+      });
+    }
+
+    // Validate selected dishes
+    const candidateDishIds = poll.CandidateDishes.map((cd) => cd.dishId);
+    const invalidDishes = selectedDishIds.filter(
+      (id) => !candidateDishIds.includes(id)
+    );
+    if (invalidDishes.length > 0) {
+      return res.status(400).json({
+        message: "Some selected dishes are not candidates for this poll.",
+        invalidDishes,
+      });
+    }
+
+    // Update isSelected for finalized dishes
+    await Promise.all(
+      poll.CandidateDishes.map(async (cd) => {
+        cd.isSelected = selectedDishIds.includes(cd.dishId);
+        await cd.save();
+      })
+    );
+
+    poll.status = 'finalized';
+    await poll.save();
+    return res.json({
+      message: "Poll finalized successfully.",
+      finalizedDishes: selectedDishIds,
+    });
+  } catch (error) {
+    console.error("Error in finalizedVotePoll:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };

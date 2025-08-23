@@ -1,5 +1,5 @@
 import express from 'express';
-import {submitVoteOptions , getActiveVotePoll } from '../controllers/votePoll.js';
+import {submitVoteOptions , getActiveVotePoll,finalizedVotePoll } from '../controllers/votePoll.js';
 import { authenticateToken } from '../middlewares/auth.js';
 import { authorizeRole } from '../middlewares/authorizeRole.js';
 
@@ -87,6 +87,7 @@ const votePollRouter = express.Router();
  */
 votePollRouter.post('/',authenticateToken,authorizeRole('staff'),submitVoteOptions);
 votePollRouter.get('/active',getActiveVotePoll);
+votePollRouter.post('/:id/finalize',authenticateToken,authorizeRole('staff'),finalizedVotePoll);
 
 
 export default votePollRouter;

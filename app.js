@@ -20,6 +20,7 @@ import { microsoftAuthStrategy, googleAuthStrategy } from './controllers/user.js
 import userRoutes from './routes/user.js';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import googleRoutes from './routes/google.js'; 
+import voteRoutes from './routes/vote.js'
 
 
 dotenv.config();
@@ -68,7 +69,7 @@ app.use('/docs', serveSwagger, setupSwagger);
 // Routes
 app.use('/api/dishes', dishRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/vote-option', votePollRoutes);
+app.use('/api/polls', votePollRoutes);
 app.use('/api/categories', categoryRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishes', wishesRoutes);
@@ -78,7 +79,7 @@ app.use('/auth/microsoft', microsoftRoutes);
 app.use('/auth/google', googleRoutes)
 
 app.use('/api/results',resultRoutes);
-
+app.use('/api/votes',voteRoutes);
 
 app.get('/', (req, res) => {
     res.send('Meal Voting API');
