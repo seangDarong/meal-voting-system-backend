@@ -1,5 +1,5 @@
 import express from 'express';
-import { createFeedback, getFeedback, createFeedbackForDish, getDishFeedback } from '../controllers/feedback.js';
+import { createFeedback, getFeedback, createFeedbackForDish, getAllDishFeedback } from '../controllers/feedback.js';
 
 const router = express.Router();
 
@@ -8,55 +8,46 @@ const router = express.Router();
 /**
  * @swagger
  * /api/feedback:
- *  post:
- *      summary: Submit anonymous feedback
- *      tags: [Feedback]
- *      requestBody:
- *          required: true
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      properties:
- *                          canteen:
- *                             type: integer
- *                             description: Canteen rating
- *                             example: 5
- *                          system:
- *                              type: integer
- *                              description: System rating
- *                              example: 4
- *                          content:
- *                              type: string
- *                              description: Feedback content
- *                              example: "This is my feedback"
- *      responses:
- *          201:
- *              description: Feedback submitted successfully
- *              content:
- *                  application/json:
- *                      schema:
- *                          type: object
- *                          properties:
- *                              success:
- *                                  type: boolean
- *                                  example: true
- *                              message:
- *                                  type: string
- *                                  example: "Feedback submitted anonymously."
- *          500:
- *              description: Internal server error
- *              content:
- *                  application/json:
- *                      schema:
- *                          type: object
- *                          properties:
- *                              success:
- *                                  type: boolean
- *                                  example: false
- *                              error:
- *                                  type: string
- *                                  example: "Feedback error: Error submitting feedback."
+ *   post:
+ *     summary: Submit anonymous feedback
+ *     tags: [Feedback]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               canteen:
+ *                 type: integer
+ *                 description: Canteen rating (1-5)
+ *                 example: 5
+ *               system:
+ *                 type: integer
+ *                 description: System rating (1-5)
+ *                 example: 4
+ *               content:
+ *                 type: string
+ *                 description: Feedback content
+ *                 example: "This is my feedback"
+ *     responses:
+ *       '201':
+ *         description: Feedback submitted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Feedback submitted anonymously."
+ *       '400':
+ *         description: Invalid input (no feedback fields provided)
+ *       '500':
+ *         description: Internal server error
  */
 router.post('/', createFeedback);
 
@@ -83,7 +74,7 @@ router.post('/', createFeedback);
  *           default: 0
  *         description: Number of items to skip before starting to collect results.
  *     responses:
- *       200:
+ *       '200':
  *         description: Successfully retrieved paginated feedback
  *         content:
  *           application/json:
@@ -96,7 +87,24 @@ router.post('/', createFeedback);
  *                 items:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/FeedbackPublic'
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       canteen:
+ *                         type: integer
+ *                         example: 4
+ *                       system:
+ *                         type: integer
+ *                         example: 5
+ *                       content:
+ *                         type: string
+ *                         example: "Great service!"
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-08-25T12:34:56.000Z"
  *                 total:
  *                   type: integer
  *                   example: 25
@@ -104,21 +112,11 @@ router.post('/', createFeedback);
  *                   type: integer
  *                   nullable: true
  *                   example: 15
- *       500:
+ *       '500':
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 error:
- *                   type: string
- *                   example: "Feedback error: Error fetching feedback."
  */
 router.get('/', getFeedback);
+
 /**
  * @swagger
  * /api/feedback/dish/{dishId}:
@@ -138,17 +136,19 @@ router.get('/', getFeedback);
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - food
  *             properties:
  *               food:
  *                 type: integer
  *                 minimum: 1
  *                 maximum: 5
  *                 example: 4
+ *               content:
+ *                 type: string
+ *                 description: Optional feedback text
+ *                 example: "Delicious dish!"
  *     responses:
  *       '201':
- *         description: Successfully submitted feedback
+ *         description: Successfully submitted dish feedback
  *         content:
  *           application/json:
  *             schema:
@@ -159,32 +159,20 @@ router.get('/', getFeedback);
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Food rating submitted for dish.
+ *                   example: "Feedback for dish submitted."
  *       '400':
- *         description: Invalid dishId or food rating
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 error:
- *                   type: string
- *                   example: Valid dishId is required.
+ *         description: Invalid dishId or no feedback provided
  *       '500':
- *         description: Server error while submitting feedback
+ *         description: Server error while submitting dish feedback
  */
 router.post('/dish/:dishId', createFeedbackForDish);
 
-
 /**
  * @swagger
- * /api/feedback/dish/{dishId}:
+ * /api/feedback/dish/{dishId}/all:
  *   get:
- *     summary: Get feedback summary for a dish
- *     description: Retrieve average food rating and total ratings for a specific dish.
+ *     summary: Get all feedback for a dish
+ *     description: Retrieve all feedback (ratings + comments) for a specific dish with average rating.
  *     tags: [Feedback]
  *     parameters:
  *       - name: dishId
@@ -195,7 +183,7 @@ router.post('/dish/:dishId', createFeedbackForDish);
  *           type: integer
  *     responses:
  *       '200':
- *         description: Successfully fetched feedback summary
+ *         description: Successfully fetched all dish feedback
  *         content:
  *           application/json:
  *             schema:
@@ -214,12 +202,30 @@ router.post('/dish/:dishId', createFeedbackForDish);
  *                 totalRatings:
  *                   type: integer
  *                   example: 15
+ *                 feedbacks:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       food:
+ *                         type: integer
+ *                         example: 5
+ *                       content:
+ *                         type: string
+ *                         example: "Very tasty!"
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-08-25T12:34:56.000Z"
  *       '400':
  *         description: Invalid dishId provided
  *       '500':
- *         description: Server error while fetching feedback
+ *         description: Server error while fetching dish feedback
  */
+router.get('/dish/:dishId/all', getAllDishFeedback);
 
-router.get('/dish/:dishId', getDishFeedback);
 
 export default router;

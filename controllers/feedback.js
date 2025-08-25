@@ -2,9 +2,22 @@ import Feedback from '../models/feedback.js';
 
 export const createFeedback = async (req, res) => {
     try {
+        // Check if cookie exists
+        if (req.cookies.lastFeedback) {
+            const lastFeedbackTime = new Date(req.cookies.lastFeedback);
+            const now = new Date();
+
+            const diffMinutes = Math.floor((now - lastFeedbackTime) / (1000 * 60));
+            if (diffMinutes < 5) {
+                return res.status(429).json({
+                    success: false,
+                    error: `Please wait ${5 - diffMinutes} more minute(s) before submitting again.`
+                });
+            }
+        }
+
         const { canteen, system, content } = req.body;
 
-        // Check if at least one field is provided
         if (
             typeof canteen !== 'number' &&
             typeof system !== 'number' &&
@@ -19,12 +32,19 @@ export const createFeedback = async (req, res) => {
             content: typeof content === 'string' ? content.trim() : null
         });
 
+        // Set/update cookie (expires in 5 minutes)
+        res.cookie("lastFeedback", new Date().toISOString(), {
+            httpOnly: true,
+            maxAge: 5 * 60 * 1000
+        });
+
         res.status(201).json({ success: true, message: 'Feedback submitted anonymously.' });
     } catch (error) {
         console.error('Feedback error:', error);
         res.status(500).json({ success: false, error: 'Feedback error: Error submitting feedback.' });
     }
 };
+
 
 //get feedback
 export const getFeedback = async (req, res) => {
@@ -39,9 +59,10 @@ export const getFeedback = async (req, res) => {
         if (limit > 50) limit = 50; // max 50 per request
         if (isNaN(offset) || offset < 0) offset = 0;
 
-        // Fetch feedback with pagination + ordering
+        // Fetch feedback with pagination + ordering, only feedback not connected to any dish
         const { count: total, rows } = await Feedback.findAndCountAll({
-            attributes: ["id", "content", "createdAt"], // anonymous fields only
+            where: { dishId: null },
+            attributes: ["id", "canteen", "system", "content", "createdAt"],
             order: [["createdAt", "DESC"]],
             limit,
             offset
@@ -68,29 +89,52 @@ export const getFeedback = async (req, res) => {
 export const createFeedbackForDish = async (req, res) => {
     try {
         const { dishId } = req.params;
-        const { food } = req.body;
+        const { food, content } = req.body;
 
-        // Validate dishId and food rating
+        // Prevent spamming with cookie check
+        if (req.cookies.feedbackSubmitted) {
+            return res.status(429).json({
+                success: false,
+                error: "You have already submitted feedback recently. Please wait before submitting again."
+            });
+        }
+
+        // Validate dishId
         if (!dishId || isNaN(parseInt(dishId))) {
             return res.status(400).json({ success: false, error: 'Valid dishId is required.' });
         }
-        if (typeof food !== 'number' || food < 1 || food > 5) {
-            return res.status(400).json({ success: false, error: 'Food rating (1-5) is required.' });
+
+        // Check at least one field is provided
+        const hasFood = typeof food === 'number' && food >= 1 && food <= 5;
+        const hasContent = typeof content === 'string' && content.trim().length > 0;
+
+        if (!hasFood && !hasContent) {
+            return res.status(400).json({ success: false, error: 'You must provide either a food rating (1-5) or content.' });
         }
 
+        // Save feedback
         await Feedback.create({
             dishId: parseInt(dishId),
-            food
+            food: hasFood ? food : null,
+            content: hasContent ? content.trim() : null
         });
 
-        res.status(201).json({ success: true, message: 'Food rating submitted for dish.' });
+        // Set a cookie that lasts for 5 minutes (300000 ms)
+        res.cookie("feedbackSubmitted", "true", {
+            maxAge: 300000, // 5 minutes
+            httpOnly: true, // client JS cannot read it
+            sameSite: "strict"
+        });
+
+        res.status(201).json({ success: true, message: 'Feedback for dish submitted.' });
     } catch (error) {
         console.error('Feedback error:', error);
         res.status(500).json({ success: false, error: 'Error submitting dish feedback.' });
     }
 };
 
-export const getDishFeedback = async (req, res) => {
+
+export const getAllDishFeedback = async (req, res) => {
     try {
         const { dishId } = req.params;
 
@@ -98,12 +142,13 @@ export const getDishFeedback = async (req, res) => {
             return res.status(400).json({ success: false, error: 'Valid dishId is required.' });
         }
 
-        // Get all feedback for this dish with a food rating
+        // Get all feedback for this dish
         const feedbacks = await Feedback.findAll({
-            where: { dishId: parseInt(dishId), food: { $ne: null } },
-            attributes: ['food']
+            where: { dishId: parseInt(dishId) },
+            attributes: ['id', 'food', 'content', 'createdAt']
         });
 
+        // Calculate average rating
         const ratings = feedbacks.map(fb => fb.food).filter(r => typeof r === 'number');
         const count = ratings.length;
         const average = count > 0 ? (ratings.reduce((a, b) => a + b, 0) / count).toFixed(2) : null;
@@ -112,10 +157,11 @@ export const getDishFeedback = async (req, res) => {
             success: true,
             dishId: parseInt(dishId),
             averageFoodRating: average,
-            totalRatings: count
+            totalRatings: count,
+            feedbacks
         });
     } catch (error) {
-        console.error('Get dish feedback error:', error);
+        console.error('Get all dish feedback error:', error);
         res.status(500).json({ success: false, error: 'Error fetching dish feedback.' });
     }
 };

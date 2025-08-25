@@ -21,6 +21,8 @@ import userRoutes from './routes/user.js';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import googleRoutes from './routes/google.js'; 
 import feedbackRoutes from './routes/feedback.js';
+import cookieParser from 'cookie-parser';
+
 
 dotenv.config();
 
@@ -64,6 +66,8 @@ app.use(express.json());
 
 app.use('/docs', serveSwagger, setupSwagger);
 
+app.use(cookieParser());
+
 // Routes
 app.use('/api/dishes', dishRoutes);
 app.use('/api/auth', authRoutes);
@@ -86,7 +90,7 @@ app.get('/', (req, res) => {
 
 // Sync DB
 try {
-    await db.sequelize.sync({force: true}); // Removed force: true to preserve data
+    await db.sequelize.sync({force: false}); // Removed force: true to preserve data
 
     console.log('Database synced');
 } catch (err) {
