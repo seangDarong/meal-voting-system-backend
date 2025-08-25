@@ -6,6 +6,10 @@ const Feedback = sequelize.define('Feedback', {
         type: DataTypes.INTEGER,
         allowNull: true
     },
+    food: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
     system: {
         type: DataTypes.INTEGER,
         allowNull: true
@@ -13,7 +17,7 @@ const Feedback = sequelize.define('Feedback', {
     content: {
         type: DataTypes.STRING,
         allowNull: true
-    },
+    }
 });
 
 export default Feedback;

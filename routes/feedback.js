@@ -1,5 +1,5 @@
 import express from 'express';
-import { createFeedback, getFeedback } from '../controllers/feedback.js';
+import { createFeedback, getFeedback, createFeedbackForDish, getDishFeedback } from '../controllers/feedback.js';
 
 const router = express.Router();
 
@@ -119,5 +119,107 @@ router.post('/', createFeedback);
  *                   example: "Feedback error: Error fetching feedback."
  */
 router.get('/', getFeedback);
+/**
+ * @swagger
+ * /api/feedback/dish/{dishId}:
+ *   post:
+ *     summary: Submit feedback for a dish
+ *     tags: [Feedback]
+ *     parameters:
+ *       - name: dishId
+ *         in: path
+ *         required: true
+ *         description: The ID of the dish to rate.
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - food
+ *             properties:
+ *               food:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 example: 4
+ *     responses:
+ *       '201':
+ *         description: Successfully submitted feedback
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Food rating submitted for dish.
+ *       '400':
+ *         description: Invalid dishId or food rating
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: Valid dishId is required.
+ *       '500':
+ *         description: Server error while submitting feedback
+ */
+router.post('/dish/:dishId', createFeedbackForDish);
+
+
+/**
+ * @swagger
+ * /api/feedback/dish/{dishId}:
+ *   get:
+ *     summary: Get feedback summary for a dish
+ *     description: Retrieve average food rating and total ratings for a specific dish.
+ *     tags: [Feedback]
+ *     parameters:
+ *       - name: dishId
+ *         in: path
+ *         required: true
+ *         description: The ID of the dish to fetch feedback for.
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       '200':
+ *         description: Successfully fetched feedback summary
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 dishId:
+ *                   type: integer
+ *                   example: 12
+ *                 averageFoodRating:
+ *                   type: string
+ *                   nullable: true
+ *                   example: "4.25"
+ *                 totalRatings:
+ *                   type: integer
+ *                   example: 15
+ *       '400':
+ *         description: Invalid dishId provided
+ *       '500':
+ *         description: Server error while fetching feedback
+ */
+
+router.get('/dish/:dishId', getDishFeedback);
 
 export default router;

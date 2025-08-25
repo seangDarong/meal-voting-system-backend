@@ -64,3 +64,58 @@ export const getFeedback = async (req, res) => {
         });
     }
 };
+
+export const createFeedbackForDish = async (req, res) => {
+    try {
+        const { dishId } = req.params;
+        const { food } = req.body;
+
+        // Validate dishId and food rating
+        if (!dishId || isNaN(parseInt(dishId))) {
+            return res.status(400).json({ success: false, error: 'Valid dishId is required.' });
+        }
+        if (typeof food !== 'number' || food < 1 || food > 5) {
+            return res.status(400).json({ success: false, error: 'Food rating (1-5) is required.' });
+        }
+
+        await Feedback.create({
+            dishId: parseInt(dishId),
+            food
+        });
+
+        res.status(201).json({ success: true, message: 'Food rating submitted for dish.' });
+    } catch (error) {
+        console.error('Feedback error:', error);
+        res.status(500).json({ success: false, error: 'Error submitting dish feedback.' });
+    }
+};
+
+export const getDishFeedback = async (req, res) => {
+    try {
+        const { dishId } = req.params;
+
+        if (!dishId || isNaN(parseInt(dishId))) {
+            return res.status(400).json({ success: false, error: 'Valid dishId is required.' });
+        }
+
+        // Get all feedback for this dish with a food rating
+        const feedbacks = await Feedback.findAll({
+            where: { dishId: parseInt(dishId), food: { $ne: null } },
+            attributes: ['food']
+        });
+
+        const ratings = feedbacks.map(fb => fb.food).filter(r => typeof r === 'number');
+        const count = ratings.length;
+        const average = count > 0 ? (ratings.reduce((a, b) => a + b, 0) / count).toFixed(2) : null;
+
+        res.status(200).json({
+            success: true,
+            dishId: parseInt(dishId),
+            averageFoodRating: average,
+            totalRatings: count
+        });
+    } catch (error) {
+        console.error('Get dish feedback error:', error);
+        res.status(500).json({ success: false, error: 'Error fetching dish feedback.' });
+    }
+};

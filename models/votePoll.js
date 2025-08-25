@@ -10,7 +10,7 @@ const VotePoll = sequelize.define('VotePoll', {
         type: DataTypes.DATE,
         allowNull: false,
     },
-        userId: {
+    userId: {
         type: DataTypes.UUID
     },
     status: {

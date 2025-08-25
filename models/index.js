@@ -51,6 +51,8 @@ Vote.belongsTo(Dish, { foreignKey: 'dishId' });
 VotePoll.hasMany(Vote, { foreignKey: 'votePollId', onDelete: 'CASCADE' });
 Vote.belongsTo(VotePoll, { foreignKey: 'votePollId' });
 
+Dish.hasMany(Feedback, { foreignKey: 'dishId', onDelete: 'CASCADE' });
+Feedback.belongsTo(Dish, { foreignKey: 'dishId' });
 
 const db = {
     sequelize,
@@ -63,7 +65,7 @@ const db = {
     WishList,
     VoteHistory,
     Feedback,
-    CandidateDishHistory
+    CandidateDishHistory,
 
 }
 
