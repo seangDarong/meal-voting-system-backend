@@ -182,7 +182,7 @@ export const getTodayVoteResult = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getTodayVoteResult:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error cannot get today vote result" });
   }
 };
 
@@ -239,3 +239,66 @@ export const finalizedVotePoll = async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const getUpCommingMeal = async (req, res) => {
+try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // Find today's poll (open or closed)
+    const poll = await VotePoll.findOne({
+      where: {
+        voteDate: {
+          [Op.gte]: today,
+          [Op.lt]: tomorrow,
+        },
+        status: "finalized",
+      },
+      include: [
+        {
+          model: CandidateDish,
+          include: [Dish],
+          where: {isSelected : true} ,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+      ],
+      attributes: { exclude: ["createdAt", "updatedAt"] },
+    });
+
+    if (!poll) {
+      return res.status(404).json({ message: "No result for today poll." });
+    }
+
+    // Count votes for each dish by dishId and votePollId
+    const dishesWithVotes = await Promise.all(
+      poll.CandidateDishes.map(async (cd) => {
+        const voteCount = await Vote.count({
+          where: {
+            dishId: cd.dishId,
+            votePollId: poll.id,
+          },
+        });
+        return {
+          candidateDishId: cd.id,
+          dishId: cd.dishId,
+          dish: cd.Dish,
+          voteCount,
+        };
+      })
+    );
+
+    res.json({
+      votePollId: poll.id,
+      mealDate: poll.mealDate,
+      voteDate: poll.voteDate,
+      voteStatus: poll.status,
+      dishes: dishesWithVotes,
+    });
+  } catch (error) {
+    console.error("Error in getTodayVoteResult:", error);
+    res.status(500).json({ error: "Internal server error cannot get today vote result" });
+  }
+}
+

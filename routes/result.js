@@ -1,11 +1,11 @@
 import express from 'express';
-import {getTodayVoteResult} from '../controllers/votePoll.js';
-import { authenticateToken } from '../middlewares/auth.js';
-import { authorizeRole } from '../middlewares/authorizeRole.js';
+import {getTodayVoteResult ,getUpCommingMeal} from '../controllers/votePoll.js';
+
 
 const resultRouter = express.Router();
 
 
 resultRouter.get('/today',getTodayVoteResult);
+resultRouter.get('/upcomming', getUpCommingMeal);
 
 export default resultRouter;

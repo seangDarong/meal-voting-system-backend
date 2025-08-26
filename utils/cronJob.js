@@ -16,7 +16,7 @@
 
     // Open votePoll every minute (for testing)
     cron.schedule(
-    "* 6 * * *",
+    "26 14 * * *",
     async () => {
         try {
         console.log("Cron: Opening today's poll");
@@ -50,7 +50,7 @@
 
     // Close votePoll at 4pm
     cron.schedule(
-    "* 16 * * *",
+    "48 13 * * *",
     async () => {
         // For testing, runs every minute
         try {

@@ -22,6 +22,8 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import googleRoutes from './routes/google.js'; 
 import voteRoutes from './routes/vote.js'
 
+import cookieParser from 'cookie-parser';
+
 
 dotenv.config();
 
@@ -31,6 +33,7 @@ app.use(session({ secret: "SECRET", resave: false, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use(cookieParser());
 
 
 passport.use(new MicrosoftStrategy({
