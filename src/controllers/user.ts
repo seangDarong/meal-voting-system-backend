@@ -195,7 +195,7 @@ export const getOwnProfile = async (req: GetOwnProfileRequest, res: Response): P
   try {
     const userId = req.user!.id;
     const user = await User.findByPk(userId, {
-      attributes: ['id', 'email', 'role', 'isVerified', 'isActive', 'displayName', 'createdAt', 'updatedAt']
+      attributes: ['id', 'email', 'role', 'isActive', 'displayName', 'createdAt', 'updatedAt']
     });
 
     if (!user) {
