@@ -220,49 +220,51 @@ export const getOwnProfile = async (req: GetOwnProfileRequest, res: Response): P
   }
 };
 
-export const googleAuthStrategy =  (
+export const googleAuthStrategy = async (
   accessToken: string,
   refreshToken: string,
   profile: any,
   done: any
-): any => {
-  process.nextTick(async () => {
+) => {
+  (async () => {
+    try {
+      const email = validateEmail(profile.emails[0].value);
+      const displayName = profile.displayName;
 
-  try {
-    const email = validateEmail(profile.emails[0].value);
-    const displayName = profile.displayName;
-    
-    let user = await User.findOne({ where: { email } });
+      let user = await User.findOne({ where: { email } });
 
-    if (!user) {
-      // When creating a new Google user
-      const created = await User.create({
-        email,
-        role: 'voter',
-        isActive: true,
-        displayName,
-        googleId: profile.id,
-      });
-      const userId = (created.getDataValue('id') as string) ?? created.id; // safe read
-      await WishList.create({ userId, dishId: null });
-      
-    } else {
-      if (!user.isActive) {
-        user.isActive = true;
-        await user.save();
+      if (!user) {
+        // Create new Google user
+        user = await User.create({
+          email,
+          role: 'voter',
+          isActive: true,
+          displayName,
+          googleId: profile.id,
+        });
+
+        await WishList.create({ userId: user.id, dishId: null });
+      } else {
+        // Update or reactivate existing user
+        if (!user.isActive) {
+          user.isActive = true;
+          await user.save();
+        }
+        if (!user.googleId) {
+          user.googleId = profile.id;
+          user.displayName = displayName;
+          await user.save();
+        }
       }
-      if (!user.googleId) {
-        user.googleId = profile.id;
-        user.displayName = displayName;
-        await user.save();
-      }
+
+      return done(null, user);
+    } catch (err) {
+      return done(err);
     }
-    return done(null, user);
-  } catch (error: any) {
-    return done(error);
-  }
-});
+  })();
 };
+
+
 
 export const handleGoogleCallback = async (req: Request, res: Response): Promise<void> => {
   try {
