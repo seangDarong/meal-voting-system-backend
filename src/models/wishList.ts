@@ -15,45 +15,36 @@ interface WishListAttributes {
 interface WishListCreationAttributes extends Optional<WishListAttributes, 'id' | 'lastModified' | 'createdAt' | 'updatedAt'> {}
 
 // Define WishList model class
-class WishList extends Model<WishListAttributes, WishListCreationAttributes> implements WishListAttributes {
-  public id!: number;
-  public userId!: string;
-  public dishId!: number | null;
-  public lastModified!: Date | null;
-  
-  // Timestamps
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+export default class WishList extends Model<WishListAttributes, WishListCreationAttributes> implements WishListAttributes {
+  declare id: string;
+  declare userId: string;          // UUID string
+  declare dishId: number | null;   // likely integer
+  declare lastModified: Date | null;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 WishList.init(
   {
     id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true
     },
     userId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: false
     },
     dishId: {
       type: DataTypes.INTEGER,
-      allowNull: true,
+      allowNull: true
     },
     lastModified: {
       type: DataTypes.DATE,
-      allowNull: true,
-      defaultValue: null
+      allowNull: true
     }
-  }, 
-  {
-    sequelize,
-    modelName: 'WishList',
-    tableName: 'WishLists',
-    timestamps: true,
-  }
+  },
+  { sequelize, modelName: 'WishList', tableName: 'WishLists' }
 );
 
-export default WishList;
 export type { WishListAttributes, WishListCreationAttributes };

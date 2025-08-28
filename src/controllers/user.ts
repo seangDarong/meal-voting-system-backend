@@ -235,15 +235,17 @@ export const googleAuthStrategy =  (
     let user = await User.findOne({ where: { email } });
 
     if (!user) {
-      user = await User.create({
+      // When creating a new Google user
+      const created = await User.create({
         email,
         role: 'voter',
-        isVerified: true,
         isActive: true,
+        displayName,
         googleId: profile.id,
-        displayName
-      } as UserCreationAttributes);
-      await WishList.create({ userId: user.id, dishId: null });
+      });
+      const userId = (created.getDataValue('id') as string) ?? created.id; // safe read
+      await WishList.create({ userId, dishId: null });
+      
     } else {
       if (!user.isActive) {
         user.isActive = true;
