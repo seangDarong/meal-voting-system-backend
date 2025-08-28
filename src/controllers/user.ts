@@ -8,6 +8,7 @@ import WishList from '@/models/wishList';
 import { UserAttributes, UserCreationAttributes } from '@/models/user';
 
 import { StaffLoginRequest, DeactivateOwnAccountRequest, GetOwnProfileRequest, SetupGraduationDateRequest } from '@/types/requests';
+import { GoogleCallbackParameters } from 'passport-google-oauth20';
 
 const User = db.User;
 
@@ -119,7 +120,7 @@ export const signOut = (req: Request, res: Response): Response => {
 
 export const deactivateOwnAccount = async (req: DeactivateOwnAccountRequest, res: Response): Promise<Response> => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const { confirmPassword } = req.body;
 
     if (!confirmPassword) {
@@ -192,7 +193,7 @@ export const deactivateOwnAccount = async (req: DeactivateOwnAccountRequest, res
 
 export const getOwnProfile = async (req: GetOwnProfileRequest, res: Response): Promise<Response> => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const user = await User.findByPk(userId, {
       attributes: ['id', 'email', 'role', 'isVerified', 'isActive', 'displayName', 'createdAt', 'updatedAt']
     });
@@ -219,12 +220,14 @@ export const getOwnProfile = async (req: GetOwnProfileRequest, res: Response): P
   }
 };
 
-export const googleAuthStrategy = async (
+export const googleAuthStrategy =  (
   accessToken: string,
   refreshToken: string,
-  profile: GoogleProfile,
-  done: VerifyCallback
-): Promise<void> => {
+  profile: any,
+  done: any
+): any => {
+  process.nextTick(async () => {
+
   try {
     const email = validateEmail(profile.emails[0].value);
     const displayName = profile.displayName;
@@ -256,6 +259,7 @@ export const googleAuthStrategy = async (
   } catch (error: any) {
     return done(error);
   }
+});
 };
 
 export const handleGoogleCallback = async (req: Request, res: Response): Promise<void> => {
@@ -380,7 +384,7 @@ export const handleMicrosoftCallback = async (req: Request, res: Response): Prom
 export const setupGraduationDate = async (req: SetupGraduationDateRequest, res: Response): Promise<Response> => {
   try {
     const { generation } = req.body;
-    const userId = req.user.id;
+    const userId = req.user!.id;
 
     const user = await User.findByPk(userId);
     if (!user) {

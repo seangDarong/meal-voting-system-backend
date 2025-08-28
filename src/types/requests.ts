@@ -1,102 +1,68 @@
 import { Request } from 'express';
-import {File } from "@/utils/r2"
+import { UserAttributes } from '@/models/user';
 
 //admin
 
 export interface AuthenticatedRequest extends Request {
-  user: {
-    id: string;
-    email: string;
-    role: string;
-  };
+  // user?: UserAttributes
 }
 
-export interface AddStaffRequest extends Request {
+export interface AddStaffRequest extends AuthenticatedRequest {
   body: {
     email: string;
     password: string;
     role: 'staff' | 'admin';
   };
-  user: {
-    id: string;
-    email: string;
-  };
 }
 
-export interface DeleteUserRequest extends Request {
+export interface DeleteUserRequest extends AuthenticatedRequest {
   params: {
     id: string;
   };
-  user: {
-    id: string;
-    email: string;
-  };
 }
 
-export interface DeactivateUserRequest extends Request {
+export interface DeactivateUserRequest extends AuthenticatedRequest {
   params: {
     id: string;
   };
-  user: {
-    id: string;
-    email: string;
-  };
 }
 
-export interface ReactivateUserRequest extends Request {
+export interface ReactivateUserRequest extends AuthenticatedRequest {
   params: {
     id: string;
   };
-  user: {
-    id: string;
-    email: string;
-  };
 }
 
-export interface GetAllUsersRequest extends Request {
+export interface GetAllUsersRequest extends AuthenticatedRequest {
   query: {
     includeInactive?: string;
     role?: 'admin' | 'staff' | 'voter';
   };
 }
 
-export interface DeleteFeedbackRequest extends Request {
+export interface DeleteFeedbackRequest extends AuthenticatedRequest {
   params: {
     id: string;
-  };
-  user?: {
-    id: string;
-    role: string;
-    email?: string;
   };
 }
 
 //canteen.ts
-export interface SubmitVoteOptionsRequest extends Request {
+export interface SubmitVoteOptionsRequest extends AuthenticatedRequest {
   body: {
     mealDate: string;
     dishIds: number[];
   };
-  user: {
-    id: string;
-  };
 }
 
-export interface GetActiveVotePollRequest extends Request {
-  user?: {
-    id: string;
-  };
+export interface GetActiveVotePollRequest extends AuthenticatedRequest {
 }
 
-export interface GetTodayVoteResultRequest extends Request {
-  user?: {
-    id: string;
-  };
+export interface GetTodayVoteResultRequest extends AuthenticatedRequest {
 }
 
 //dish.ts
 
-export interface AddDishRequest extends Request {
+export interface AddDishRequest extends AuthenticatedRequest {
   body: {
     name?: string;
     name_kh?: string;
@@ -106,13 +72,10 @@ export interface AddDishRequest extends Request {
     description?: string;
     description_kh?: string;
   };
-  file?: File;
-  user: {
-    id: string;
-  };
+  file?: Express.Multer.File;
 }
 
-export interface UpdateDishRequest extends Request {
+export interface UpdateDishRequest extends AuthenticatedRequest {
   params: {
     id: string;
   };
@@ -125,10 +88,10 @@ export interface UpdateDishRequest extends Request {
     ingredient_kh?: string;
     categoryId?: string;
   };
-  file?: File;
+  file?: Express.Multer.File;
 }
 
-export interface DeleteDishRequest extends Request {
+export interface DeleteDishRequest extends AuthenticatedRequest {
   params: {
     id: string;
   };
@@ -167,55 +130,36 @@ export interface StaffLoginRequest extends Request {
   };
 }
 
-export interface DeactivateOwnAccountRequest extends Request {
+export interface DeactivateOwnAccountRequest extends AuthenticatedRequest {
   body: {
     confirmPassword: string;
   };
-  user: {
-    id: string;
-    email?: string;
-  };
 }
 
-export interface GetOwnProfileRequest extends Request {
-  user: {
-    id: string;
-  };
+export interface GetOwnProfileRequest extends AuthenticatedRequest {
 }
 
-export interface SetupGraduationDateRequest extends Request {
+export interface SetupGraduationDateRequest extends AuthenticatedRequest {
   body: {
     generation: string;
-  };
-  user: {
-    id: string;
   };
 }
 
 //wishlist.ts
 
-export interface GetMyWishRequest extends Request {
-  user: {
-    id: string;
-  };
+export interface GetMyWishRequest extends AuthenticatedRequest {
 }
 
-export interface UpdateWishRequest extends Request {
+export interface UpdateWishRequest extends AuthenticatedRequest {
   body: {
     dishId?: number;
   };
-  user: {
-    id: string;
-  };
 }
 
-export interface RemoveWishRequest extends Request {
-  user: {
-    id: string;
-  };
+export interface RemoveWishRequest extends AuthenticatedRequest {
 }
 
-export interface GetAllWishesRequest extends Request {
+export interface GetAllWishesRequest extends AuthenticatedRequest {
   query: {
     page?: string;
     limit?: string;

@@ -46,11 +46,11 @@ interface PaginatedWishesResponse {
 // GET /api/wishes/mine
 export const getMyWish = async (req: GetMyWishRequest, res: Response): Promise<Response> => {
   try {
-    console.log('Looking for userId:', req.user.id);
-    console.log('User ID type:', typeof req.user.id);
+    console.log('Looking for userId:', req.user!.id);
+    console.log('User ID type:', typeof req.user!.id);
     
     const wish = await WishList.findOne({
-      where: { userId: req.user.id },
+      where: { userId: req.user!.id },
       include: [{ 
         model: Dish, 
         attributes: ['name', 'imageURL']
@@ -81,7 +81,7 @@ export const updateWish = async (req: UpdateWishRequest, res: Response): Promise
   if (!dishId) return res.status(400).json({ message: 'dishId required' });
 
   try {
-    const wish = await WishList.findOne({ where: { userId: req.user.id } });
+    const wish = await WishList.findOne({ where: { userId: req.user!.id } });
     if (!wish) return res.status(404).json({ message: 'Wish not found' });
 
     const now = new Date();
@@ -111,7 +111,7 @@ export const updateWish = async (req: UpdateWishRequest, res: Response): Promise
 // DELETE /api/wishes  
 export const removeWish = async (req: RemoveWishRequest, res: Response): Promise<Response> => {
   try {
-    const wish = await WishList.findOne({ where: { userId: req.user.id } });
+    const wish = await WishList.findOne({ where: { userId: req.user!.id } });
     if (!wish) return res.status(404).json({ message: 'Wish not found' });
 
     const now = new Date();

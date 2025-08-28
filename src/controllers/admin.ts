@@ -76,7 +76,7 @@ export const addStaff = async (req: AddStaffRequest, res: Response): Promise<Res
     } as UserCreationAttributes);
 
     // Log the action
-    console.log(`Admin ${req.user.email} created new ${role} account for: ${newUser.email}`);
+    console.log(`Admin ${req.user!.email} created new ${role} account for: ${newUser.email}`);
 
     // Return success response (exclude sensitive data)
     return res.status(201).json({
@@ -112,7 +112,7 @@ export const addStaff = async (req: AddStaffRequest, res: Response): Promise<Res
 export const deleteUser = async (req: DeleteUserRequest, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
-    const adminId = req.user.id;
+    const adminId = req.user!.id;
 
     // Validate input
     if (!id) {
@@ -157,7 +157,7 @@ export const deleteUser = async (req: DeleteUserRequest, res: Response): Promise
     await userToDelete.destroy();
 
     // Log the action
-    console.log(`Admin ${req.user.email} (ID: ${adminId}) permanently deleted user ${deletedUserInfo.email} (ID: ${deletedUserInfo.id}, Role: ${deletedUserInfo.role})`);
+    console.log(`Admin ${req.user!.email} (ID: ${adminId}) permanently deleted user ${deletedUserInfo.email} (ID: ${deletedUserInfo.id}, Role: ${deletedUserInfo.role})`);
 
     return res.status(200).json({
       success: true,
@@ -169,8 +169,8 @@ export const deleteUser = async (req: DeleteUserRequest, res: Response): Promise
           role: deletedUserInfo.role
         },
         deletedBy: {
-          id: req.user.id,
-          email: req.user.email
+          id: req.user!.id,
+          email: req.user!.email
         },
         deletedAt: new Date().toISOString()
       }
@@ -196,7 +196,7 @@ export const deleteUser = async (req: DeleteUserRequest, res: Response): Promise
 export const deactivateUser = async (req: DeactivateUserRequest, res: Response): Promise<Response> => {
   try {
     const { id } = req.params;
-    const adminId = req.user.id;
+    const adminId = req.user!.id;
 
     // Validate input
     if (!id) {
@@ -236,7 +236,7 @@ export const deactivateUser = async (req: DeactivateUserRequest, res: Response):
     await userToDeactivate.save();
 
     // Log the action
-    console.log(`Admin ${req.user.email} (ID: ${adminId}) deactivated user ${userToDeactivate.email} (ID: ${userToDeactivate.id}, Role: ${userToDeactivate.role})`);
+    console.log(`Admin ${req.user!.email} (ID: ${adminId}) deactivated user ${userToDeactivate.email} (ID: ${userToDeactivate.id}, Role: ${userToDeactivate.role})`);
 
     return res.status(200).json({
       success: true,
@@ -249,8 +249,8 @@ export const deactivateUser = async (req: DeactivateUserRequest, res: Response):
           isActive: userToDeactivate.isActive
         },
         deactivatedBy: {
-          id: req.user.id,
-          email: req.user.email
+          id: req.user!.id,
+          email: req.user!.email
         },
         deactivatedAt: new Date().toISOString()
       }
@@ -307,7 +307,7 @@ export const reactivateUser = async (req: ReactivateUserRequest, res: Response):
     await userToReactivate.save();
 
     // Log the action
-    console.log(`Admin ${req.user.email} (ID: ${req.user.id}) reactivated ${userToReactivate.role} user ${userToReactivate.email} (ID: ${userToReactivate.id})`);
+    console.log(`Admin ${req.user!.email} (ID: ${req.user!.id}) reactivated ${userToReactivate.role} user ${userToReactivate.email} (ID: ${userToReactivate.id})`);
 
     return res.status(200).json({
       success: true,
@@ -320,8 +320,8 @@ export const reactivateUser = async (req: ReactivateUserRequest, res: Response):
           isActive: userToReactivate.isActive
         },
         reactivatedBy: {
-          id: req.user.id,
-          email: req.user.email
+          id: req.user!.id,
+          email: req.user!.email
         },
         reactivatedAt: new Date().toISOString()
       }

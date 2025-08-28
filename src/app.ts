@@ -3,49 +3,66 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import db from '@/models/index';
 //routes
-// import dishRoutes from './routes/dish.js'
-// import resultRoutes from './routes/result.js'
+import dishRoutes from '@/routes/dish'
+import resultRoutes from '@/routes/result'
 import passport from 'passport';
 import session from 'express-session';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import jwt from 'jsonwebtoken';
-// import authRoutes from './routes/auth.js';
-// import canteenRoutes from './routes/canteen.js';
-import {serveSwagger, setupSwagger} from "./config/swagger.js";
-// import categoryRoutes from './routes/category.js'
-// import adminRoutes from './routes/admin.js';
-// import wishesRoutes from './routes/wishes.js';
-// import microsoftRoutes from './routes/microsoft.js'; 
+import authRoutes from '@/routes/auth';
+import canteenRoutes from '@/routes/canteen';
+import {serveSwagger, setupSwagger} from "@/config/swagger";
+import categoryRoutes from '@/routes/category'
+import adminRoutes from '@/routes/admin';
+import wishesRoutes from '@/routes/wishes';
+import microsoftRoutes from '@/routes/microsoft'; 
 import { microsoftAuthStrategy, googleAuthStrategy } from '@/controllers/user';
-// import userRoutes from './routes/user.js';
+import userRoutes from '@/routes/user';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-// import googleRoutes from './routes/google.js'; 
+import googleRoutes from '@/routes/google'; 
 
 dotenv.config();
 
 const app = express();
 
-app.use(session({ secret: "SECRET", resave: false, saveUninitialized: true }));
+app.use(session({ 
+    secret: process.env.SESSION_SECRET || "SECRET", 
+    resave: false, 
+    saveUninitialized: true 
+}));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
 
-passport.use(new MicrosoftStrategy({
-    clientID: process.env.MS_CLIENT_ID,
-    clientSecret: process.env.MS_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/microsoft/callback",
-    scope: ['user.read'],
-    tenant: process.env.MS_TENANT_ID
-}, microsoftAuthStrategy));
-
-passport.use(new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/auth/google/callback"
-}, googleAuthStrategy));
+if (process.env.MS_CLIENT_ID && process.env.MS_CLIENT_SECRET) {
+    passport.use(new MicrosoftStrategy({
+      clientID: process.env.MS_CLIENT_ID,
+      clientSecret: process.env.MS_CLIENT_SECRET,
+      callbackURL: process.env.MS_CALLBACK_URL || "http://localhost:3000/auth/microsoft/callback",
+      scope: ['user.read'],
+      tenant: process.env.MS_TENANT_ID
+    }, microsoftAuthStrategy));
+  } else {
+    console.warn('Microsoft OAuth credentials not found. Microsoft authentication disabled.');
+}
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback',
+        },
+        googleAuthStrategy //Fuck this shit
+      )
+    );
+  } else {
+    console.warn('Google OAuth credentials not found. Google authentication disabled.');
+  }
 
 passport.serializeUser((user, done) => done(null, user.id));
-passport.deserializeUser(async (id, done) => {
+passport.deserializeUser(async (id:any, done) => {
     try {
         const user = await db.User.findByPk(id);
         done(null, user);
@@ -83,12 +100,15 @@ app.get('/', (req, res) => {
 });
 
 // Sync DB
-try {
-    await db.sequelize.sync({force: true}); // Removed force: true to preserve data
-
-    console.log('Database synced');
-} catch (err) {
-    console.error('DB sync failed:', err);
-}
+(async () => {
+    try {
+        await db.sequelize.sync({force: true}); // Removed force: true to preserve data
+    
+        console.log('Database synced');
+    } catch (err) {
+        console.error('DB sync failed:', err);
+    }
+    
+})();
 
 export default app;

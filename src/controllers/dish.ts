@@ -22,7 +22,7 @@ export const addDish = async (req: AddDishRequest, res: Response): Promise<Respo
       description_kh
     } = req.body;
     const imageFile = req.file;
-    const userId = req.user.id;
+    const userId = req.user!.id;
 
     // Validate required fields
     if (!categoryId || !imageFile || !name_kh) {
