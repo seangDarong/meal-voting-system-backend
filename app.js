@@ -61,6 +61,7 @@ const frontURL = `${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}`;
 console.log('listen from ', frontURL);
 app.use(cors({
     origin: frontURL,
+    credentials: true
 }));
 app.use(express.json());
 
@@ -90,7 +91,7 @@ app.get('/', (req, res) => {
 
 // Sync DB
 try {
-    await db.sequelize.sync({force: false}); // Removed force: true to preserve data
+    await db.sequelize.sync({force: true}); // Removed force: true to preserve data
 
     console.log('Database synced');
 } catch (err) {
