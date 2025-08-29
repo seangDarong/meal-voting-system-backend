@@ -1,5 +1,5 @@
 import express from 'express';
-import {getTodayVoteResult} from '@/controllers/canteen';
+import {getTodayVoteResult} from '@/controllers/votePoll';
 
 import { GetTodayVoteResultRequest } from '@/types/requests';
 

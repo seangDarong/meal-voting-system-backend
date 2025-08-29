@@ -10,7 +10,7 @@ import session from 'express-session';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import jwt from 'jsonwebtoken';
 import authRoutes from '@/routes/auth';
-import canteenRoutes from '@/routes/canteen';
+import canteenRoutes from '@/routes/votePoll';
 import {serveSwagger, setupSwagger} from "@/config/swagger";
 import categoryRoutes from '@/routes/category'
 import adminRoutes from '@/routes/admin';
@@ -102,7 +102,7 @@ app.get('/', (req, res) => {
 // Sync DB
 (async () => {
     try {
-        await db.sequelize.sync({force: true}); // Removed force: true to preserve data
+        await db.sequelize.sync({force: false}); // Removed force: true to preserve data
     
         console.log('Database synced');
     } catch (err) {
