@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import db from '@/models/index';
+import cookieParser from 'cookie-parser';
 //routes
 import dishRoutes from '@/routes/dish'
 import resultRoutes from '@/routes/result'
@@ -20,10 +21,13 @@ import { microsoftAuthStrategy, googleAuthStrategy } from '@/controllers/user';
 import userRoutes from '@/routes/user';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import googleRoutes from '@/routes/google'; 
+import feedbackRoutes from '@/routes/feedback';
 
 dotenv.config();
 
 const app = express();
+
+app.use(cookieParser());  
 
 app.use(session({ 
     secret: process.env.SESSION_SECRET || "SECRET", 
@@ -87,6 +91,7 @@ app.use('/api/vote-option', canteenRoutes);
 app.use('/api/categories', categoryRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishes', wishesRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 app.use('/api/user', userRoutes);
 app.use('/auth/microsoft', microsoftRoutes); 

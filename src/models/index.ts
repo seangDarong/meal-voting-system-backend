@@ -55,6 +55,9 @@ Vote.belongsTo(Dish, { foreignKey: 'dishId' });
 VotePoll.hasMany(Vote, { foreignKey: 'votePollId', onDelete: 'CASCADE' });
 Vote.belongsTo(VotePoll, { foreignKey: 'votePollId' });
 
+Dish.hasMany(Feedback, { foreignKey: 'dishId', onDelete: 'CASCADE' });
+Feedback.belongsTo(Dish, { foreignKey: 'dishId' });
+
 interface Database {
     sequelize: typeof sequelize;
     User: typeof User;
