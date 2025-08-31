@@ -2,7 +2,8 @@ import express from 'express';
 import { 
     signOut,
     deactivateOwnAccount,
-    getOwnProfile
+    getOwnProfile,
+    staffLogin
 } from '@/controllers/user';
 import { authenticateToken } from '@/middlewares/auth';
 
@@ -111,5 +112,7 @@ router.put('/deactivate', authenticateToken,(req, res, next) => {
  *               $ref: '#/components/schemas/Success'
  */
 router.post('/signout', authenticateToken, signOut);
+
+router.post('/staff-login', staffLogin);
 
 export default router;

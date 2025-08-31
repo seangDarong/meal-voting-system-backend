@@ -27,6 +27,109 @@ const router = express.Router();
  */
 
 // ===== BASIC AUTHENTICATION ROUTES =====
+
+/**
+ * @swagger
+ * /api/auth/staff-login:
+ *   post:
+ *     summary: Staff/Admin login
+ *     description: Authenticate a staff or admin user using email and password. Returns a JWT token on successful login.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: staff@example.com
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: mySecret123
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Login successful
+ *                 token:
+ *                   type: string
+ *                   description: JWT authentication token
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     email:
+ *                       type: string
+ *                       example: staff@example.com
+ *                     role:
+ *                       type: string
+ *                       enum: [staff, admin]
+ *                       example: staff
+ *                     displayName:
+ *                       type: string
+ *                       example: John Doe
+ *                     isActive:
+ *                       type: boolean
+ *                       example: true
+ *       401:
+ *         description: Invalid credentials or not a staff/admin account
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: Invalid credentials
+ *       403:
+ *         description: Account is deactivated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: Account is deactivated. Please contact an administrator.
+ *       500:
+ *         description: Server error during login
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: Error logging in
+ */
+
 router.post('/staff-login', staffLogin);
 
 // ===== MICROSOFT AUTHENTICATION ROUTES =====
