@@ -12,7 +12,7 @@ export interface AddStaffRequest extends AuthenticatedRequest {
     email: string;
     password: string;
     role: 'staff' | 'admin';
-  };
+  }; 
 }
 
 export interface DeleteUserRequest extends AuthenticatedRequest {
@@ -58,6 +58,21 @@ export interface GetActiveVotePollRequest extends AuthenticatedRequest {
 }
 
 export interface GetTodayVoteResultRequest extends AuthenticatedRequest {
+  
+}
+
+export interface GetUpCommingMealRequest extends AuthenticatedRequest {
+  
+}
+
+
+export interface FinalizeVotePollRequest extends AuthenticatedRequest {
+  params: {
+    id : string;
+  }
+  body: {
+    selectedDishIds : number[];
+  }
 }
 
 //dish.ts
@@ -166,4 +181,18 @@ export interface GetAllWishesRequest extends AuthenticatedRequest {
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
   };
+}
+
+//vote 
+
+export interface CastVoteRequest extends AuthenticatedRequest {
+  body:{
+    dishId?: number;
+  }
+}
+
+export interface UpdateVoteRequest extends AuthenticatedRequest {
+  body:{
+    dishId?: number;
+  }
 }

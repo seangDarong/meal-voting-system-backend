@@ -10,7 +10,7 @@ import session from 'express-session';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import jwt from 'jsonwebtoken';
 import authRoutes from '@/routes/auth';
-import canteenRoutes from '@/routes/canteen';
+import votePollRoutes from '@/routes/votePoll';
 import {serveSwagger, setupSwagger} from "@/config/swagger";
 import categoryRoutes from '@/routes/category'
 import adminRoutes from '@/routes/admin';
@@ -20,11 +20,13 @@ import { microsoftAuthStrategy, googleAuthStrategy } from '@/controllers/user';
 import userRoutes from '@/routes/user';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import googleRoutes from '@/routes/google'; 
-
+import voteRoutes from '@/routes/vote';
+import cookieParser from 'cookie-parser';
 dotenv.config();
 
-const app = express();
 
+const app = express();
+app.use(cookieParser());
 app.use(session({ 
     secret: process.env.SESSION_SECRET || "SECRET", 
     resave: false, 
@@ -83,7 +85,7 @@ app.use('/docs', serveSwagger, setupSwagger);
 // Routes
 app.use('/api/dishes', dishRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/vote-option', canteenRoutes);
+app.use('/api/polls', votePollRoutes);
 app.use('/api/categories', categoryRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishes', wishesRoutes);
@@ -94,6 +96,8 @@ app.use('/auth/google', googleRoutes)
 
 app.use('/api/results',resultRoutes);
 
+app.use('/api/votes', voteRoutes);
+
 
 app.get('/', (req, res) => {
     res.send('Meal Voting API');
@@ -102,7 +106,7 @@ app.get('/', (req, res) => {
 // Sync DB
 (async () => {
     try {
-        await db.sequelize.sync({force: true}); // Removed force: true to preserve data
+        await db.sequelize.sync({force: false}); // Removed force: true to preserve data
     
         console.log('Database synced');
     } catch (err) {

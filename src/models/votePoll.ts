@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '@/config/db';
+import CandidateDish  from "./candidateDish";
 
 // Define interface for VotePoll attributes
 interface VotePollAttributes {
@@ -17,18 +18,21 @@ interface VotePollCreationAttributes extends Optional<VotePollAttributes, 'id' |
 
 // Define VotePoll model class
 class VotePoll extends Model<VotePollAttributes, VotePollCreationAttributes> implements VotePollAttributes {
-  public id!: number;
-  public voteDate!: Date;
-  public mealDate!: Date;
-  public userId!: string;
-  public status!: 'open' | 'close' | 'pending' | 'finalized';
+  declare id: number;
+  declare voteDate: Date;
+  declare mealDate: Date;
+  declare userId: string;
+  declare status: 'open' | 'close' | 'pending' | 'finalized';
+
+  //association 
+  CandidateDishes?: CandidateDish[];
   
   // Timestamps
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
-VotePoll.init(
+VotePoll.init( 
   {
     id: {
       type: DataTypes.INTEGER,

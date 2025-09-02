@@ -1,61 +1,67 @@
-import sequelize from "@/config/db";
-import User from '@/models/user';
-import Dish from '@/models/dish';
-import Category from '@/models/category';
-import Vote from '@/models/vote';
-import VotePoll from '@/models/votePoll';
-import CandidateDish from '@/models/candidateDish';
-import WishList from '@/models/wishList'
-import VoteHistory from '@/models/voteHistory';
-import Feedback from '@/models/feedback';
-import CandidateDishHistory from '@/models/candidateDishHistory';
+    import sequelize from "@/config/db";
+    import User from "@/models/user";
+    import Dish from "@/models/dish";
+    import Category from "@/models/category";
+    import Vote from "@/models/vote";
+    import VotePoll from "@/models/votePoll";
+    import CandidateDish from "@/models/candidateDish";
+    import WishList from "@/models/wishList";
+    import VoteHistory from "@/models/voteHistory";
+    import Feedback from "@/models/feedback";
+    import CandidateDishHistory from "@/models/candidateDishHistory";
 
-//Association
-Category.hasMany(Dish,{foreignKey: 'categoryId',onDelete: 'CASCADE'});
-Dish.belongsTo(Category, { foreignKey: 'categoryId', as: 'category' });
+    // Associations
 
-Dish.hasMany(CandidateDish,{foreignKey: 'dishId',onDelete: 'CASCADE'});
-CandidateDish.belongsTo(Dish,{foreignKey: 'dishId'});
+    // Category -> Dish
+    Category.hasMany(Dish, { foreignKey: "categoryId", onDelete: "CASCADE" });
+    Dish.belongsTo(Category, { foreignKey: "categoryId" });
 
-VotePoll.hasMany(CandidateDish, { foreignKey: 'votePollId', onDelete: 'CASCADE' });
-CandidateDish.belongsTo(VotePoll, { foreignKey: 'votePollId' });
+    // Dish -> CandidateDish
+    Dish.hasMany(CandidateDish, { foreignKey: "dishId", onDelete: "CASCADE" });
+    CandidateDish.belongsTo(Dish, { foreignKey: "dishId" });
 
-User.hasMany(Vote,{foreignKey: 'userId',onDelete: 'CASCADE'});
-Vote.belongsTo(User,{foreignKey: 'userId'});
+    // VotePoll -> CandidateDish
+    VotePoll.hasMany(CandidateDish, { foreignKey: "votePollId", onDelete: "CASCADE" });
+    CandidateDish.belongsTo(VotePoll, { foreignKey: "votePollId" });
 
-User.hasMany(VotePoll,{foreignKey: 'userId',onDelete: 'CASCADE'});
-VotePoll.belongsTo(User,{foreignKey: 'userId'});
+    // User -> Vote
+    User.hasMany(Vote, { foreignKey: "userId", onDelete: "CASCADE" });
+    Vote.belongsTo(User, { foreignKey: "userId" });
 
-User.hasMany(Dish,{foreignKey: 'userId',onDelete: 'CASCADE'});
-Dish.belongsTo(User,{foreignKey: 'userId'});
+    // User -> VotePoll
+    User.hasMany(VotePoll, { foreignKey: "userId", onDelete: "CASCADE" });
+    VotePoll.belongsTo(User, { foreignKey: "userId" });
 
-User.hasOne(WishList,{foreignKey: 'userId',onDelete: 'CASCADE'});
-WishList.belongsTo(User,{foreignKey: 'userId',onDelete: 'CASCADE'});
+    // User -> Dish
+    User.hasMany(Dish, { foreignKey: "userId", onDelete: "CASCADE" });
+    Dish.belongsTo(User, { foreignKey: "userId" });
 
-// Associations (ensure FK types match UUID)
-User.hasMany(WishList, { foreignKey: 'userId', sourceKey: 'id', onDelete: 'CASCADE' });
-WishList.belongsTo(User, { foreignKey: 'userId', targetKey: 'id' });
+    // User -> WishList
+    User.hasOne(WishList, { foreignKey: "userId", onDelete: "CASCADE" });
+    WishList.belongsTo(User, { foreignKey: "userId", onDelete: "CASCADE" });
 
-Dish.hasMany(WishList,{foreignKey: 'dishId',onDelete: 'CASCADE'});
-WishList.belongsTo(Dish,{foreignKey: 'dishId',onDelete: 'CASCADE'});
+    // Dish -> WishList
+    Dish.hasMany(WishList, { foreignKey: "dishId", onDelete: "CASCADE" });
+    WishList.belongsTo(Dish, { foreignKey: "dishId", onDelete: "CASCADE" });
 
-VoteHistory.belongsTo(Dish, { foreignKey: 'dishId', onDelete: 'CASCADE' });
-Dish.hasMany(VoteHistory, { foreignKey: 'dishId' });
+    // Dish -> VoteHistory
+    Dish.hasMany(VoteHistory, { foreignKey: "dishId" });
+    VoteHistory.belongsTo(Dish, { foreignKey: "dishId", onDelete: "CASCADE" });
 
-Dish.hasMany(CandidateDishHistory, { foreignKey: 'dishId', onDelete: 'CASCADE' });
-CandidateDishHistory.belongsTo(Dish, { foreignKey: 'dishId' });
+    // Dish -> CandidateDishHistory
+    Dish.hasMany(CandidateDishHistory, { foreignKey: "dishId", onDelete: "CASCADE" });
+    CandidateDishHistory.belongsTo(Dish, { foreignKey: "dishId" });
 
+    // Dish -> Vote
+    Dish.hasMany(Vote, { foreignKey: "dishId", onDelete: "CASCADE" });
+    Vote.belongsTo(Dish, { foreignKey: "dishId" });
 
-Dish.hasMany(CandidateDish, { foreignKey: 'dishId', onDelete: 'CASCADE' });
-CandidateDish.belongsTo(Dish, { foreignKey: 'dishId' });
-// add a new column to make it have erraltionship with dishId and VotePollId
-Dish.hasMany(Vote, { foreignKey: 'dishId', onDelete: 'CASCADE' });
-Vote.belongsTo(Dish, { foreignKey: 'dishId' });
+    // VotePoll -> Vote
+    VotePoll.hasMany(Vote, { foreignKey: "votePollId", onDelete: "CASCADE" });
+    Vote.belongsTo(VotePoll, { foreignKey: "votePollId" });
 
-VotePoll.hasMany(Vote, { foreignKey: 'votePollId', onDelete: 'CASCADE' });
-Vote.belongsTo(VotePoll, { foreignKey: 'votePollId' });
-
-interface Database {
+    // DB interface
+    interface Database {
     sequelize: typeof sequelize;
     User: typeof User;
     Dish: typeof Dish;
@@ -67,9 +73,10 @@ interface Database {
     VoteHistory: typeof VoteHistory;
     Feedback: typeof Feedback;
     CandidateDishHistory: typeof CandidateDishHistory;
-}
+    }
 
-const db: Database = {
+    // DB object
+    const db: Database = {
     sequelize,
     User,
     Dish,
@@ -80,7 +87,7 @@ const db: Database = {
     WishList,
     VoteHistory,
     Feedback,
-    CandidateDishHistory
-};
+    CandidateDishHistory,
+    };
 
-export default db;
+    export default db;
