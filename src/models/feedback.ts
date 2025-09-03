@@ -5,6 +5,7 @@ import sequelize from '@/config/db';
 interface FeedbackAttributes {
   id?: number;
   canteen: number | null;
+  food: number | null;
   system: number | null;
   content: string | null;
   userId?: string;
@@ -20,6 +21,7 @@ interface FeedbackCreationAttributes extends Optional<FeedbackAttributes, 'id' |
 class Feedback extends Model<FeedbackAttributes, FeedbackCreationAttributes> implements FeedbackAttributes {
   public id!: number;
   public canteen!: number | null;
+  public food!: number | null;
   public system!: number | null;
   public content!: string | null;
   public userId!: string | undefined;
@@ -41,6 +43,10 @@ Feedback.init(
       type: DataTypes.INTEGER,
       allowNull: true
     },
+    food: {
+      type: DataTypes.INTEGER,
+      allowNull: true
+    },
     system: {
       type: DataTypes.INTEGER,
       allowNull: true
@@ -53,10 +59,6 @@ Feedback.init(
       type: DataTypes.UUID,
       allowNull: true
     },
-    dishId: {
-      type: DataTypes.INTEGER,
-      allowNull: true
-    }
   }, 
   {
     sequelize,

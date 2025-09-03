@@ -7,7 +7,6 @@ import db from '@/models/index';
 import { WishListAttributes } from '@/models/wishList';
 import { DishAttributes } from '@/models/dish';
 import { CategoryAttributes } from '@/models/category';
-
 import { GetMyWishRequest, UpdateWishRequest, RemoveWishRequest, GetAllWishesRequest } from '@/types/requests';
 
 const COOLDOWN_SECONDS = 3600; // 1 hour
@@ -53,7 +52,12 @@ export const getMyWish = async (req: GetMyWishRequest, res: Response): Promise<R
       where: { userId: req.user!.id },
       include: [{ 
         model: Dish, 
-        attributes: ['name', 'imageURL']
+        attributes: ['name', 'imageURL', 'description', 'description_kh', 'name_kh', 'categoryId'],
+        include: [{ 
+          model: Category, 
+          as: 'category',
+          attributes: ['name', 'name_kh'] 
+        }]
       }]
     }) as unknown as WishWithDish | null;
     
@@ -61,14 +65,18 @@ export const getMyWish = async (req: GetMyWishRequest, res: Response): Promise<R
     
     if (!wish) return res.status(404).json({ message: 'Wish not found' });
 
-    const response: WishResponseDish = {
+    const response = {
       dishId: wish.dishId,
       dishName: wish.Dish ? wish.Dish.name : null,
+      dishNameKh: wish.Dish ? wish.Dish.name_kh : null,
       image: wish.Dish ? wish.Dish.imageURL : null,
+      description: wish.Dish ? wish.Dish.description : null,
+      descriptionKh: wish.Dish ? wish.Dish.description_kh : null,
       updatedAt: wish.updatedAt!
     };
 
-    return res.json(response);
+
+    return res.json(wish);
   } catch (err: any) {
     console.error('Error details:', err);
     return res.status(500).json({ message: 'Server error', error: err.message });
@@ -140,16 +148,22 @@ export const removeWish = async (req: RemoveWishRequest, res: Response): Promise
 // GET /api/wishes/all
 export const getAllWishes = async (req: GetAllWishesRequest, res: Response): Promise<Response> => {
   try {
-    const { 
-      page = '1', 
-      limit = '10', 
-      sortBy = 'totalWishes', 
-      sortOrder = 'DESC' 
+    const {
+      page = '1',
+      limit = '10',
+      sortBy = 'totalWishes',
+      sortOrder = 'DESC'
     } = req.query;
 
-    const parsedLimit = Math.min(parseInt(limit, 10) || 10, 50);
-    const parsedPage = parseInt(page, 10) || 1;
+    const parsedLimit = Math.min(parseInt(String(limit), 10) || 10, 50);
+    const parsedPage = parseInt(String(page), 10) || 1;
     const offset = (parsedPage - 1) * parsedLimit;
+    const orderDir = String(sortOrder).toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+
+    // Subquery to avoid JOIN and alias issues
+    const totalWishesLiteral = db.sequelize.literal(
+      '(SELECT COUNT(*) FROM "WishLists" WHERE "WishLists"."dishId" = "Dish"."id")'
+    );
 
     const { count, rows } = await Dish.findAndCountAll({
       attributes: [
@@ -157,50 +171,47 @@ export const getAllWishes = async (req: GetAllWishesRequest, res: Response): Pro
         'name',
         'imageURL',
         'categoryId',
-        [db.sequelize.fn('COUNT', db.sequelize.col('WishLists.id')), 'totalWishes']
+        [totalWishesLiteral, 'totalWishes']
       ],
-      include: [
-        {
-          model: WishList,
-          attributes: [],
-          required: false
-        }
-      ],
-      group: ['Dish.id'],
-      order: [
-        sortBy === 'name' 
-          ? ['name', sortOrder] 
-          : [db.sequelize.literal('totalWishes'), sortOrder]
-      ],
+      order:
+        String(sortBy) === 'name'
+          ? [['name', orderDir]]
+          : [[db.sequelize.literal('"totalWishes"'), orderDir]],
       limit: parsedLimit,
       offset
     });
 
-    // Get all unique category IDs
-    const categoryIds = [...new Set(rows.map(dish => dish.categoryId).filter(id => id !== undefined))] as number[];
-    
-    // Fetch all categories at once
+    const totalItems = Number(count);
+
+    // Fetch category names without associations
+    const categoryIds = Array.from(
+      new Set(rows.map(d => d.categoryId).filter((id): id is number => typeof id === 'number'))
+    );
+
     const categories = await Category.findAll({
       where: { id: categoryIds },
       attributes: ['id', 'name']
     });
 
-    // Create a map for quick lookup
-    const categoryMap = new Map();
-    categories.forEach(category => {
-      categoryMap.set(category.id, category.name);
+    const categoryMap = new Map<number, string>();
+    categories.forEach(c => categoryMap.set(c.id as number, c.name));
+
+    const dishes = rows.map(dish => {
+      const dishId = dish.get('id') as number;
+      const name = (dish.get('name') as string) ?? null;
+      const imageURL = (dish.get('imageURL') as string) ?? '';
+      const categoryId = dish.get('categoryId') as number | null;
+      const totalWishes = parseInt(String(dish.get('totalWishes') ?? '0'), 10) || 0;
+
+      return {
+        dishId,
+        name,
+        imageUrl: imageURL,
+        categoryId: categoryId ?? undefined,
+        categoryName: categoryId ? categoryMap.get(categoryId) ?? null : null,
+        totalWishes
+      };
     });
-
-    const totalItems = Array.isArray(count) ? count.length : count;
-
-    const dishes = rows.map(dish => ({
-      dishId: dish.id,
-      name: dish.name,
-      imageUrl: dish.imageURL,
-      categoryId: dish.categoryId,
-      categoryName: dish.categoryId ? categoryMap.get(dish.categoryId) || null : null,
-      totalWishes: parseInt((dish.get('totalWishes') as string), 10) || 0
-    }));
 
     const response: PaginatedWishesResponse = {
       dishes,
@@ -215,14 +226,11 @@ export const getAllWishes = async (req: GetAllWishesRequest, res: Response): Pro
     };
 
     return res.json(response);
-
   } catch (err: any) {
     console.error('Error fetching wishes status:', err);
-    return res.status(500).json({ 
-      message: 'Server error', 
-      error: err.message 
+    return res.status(500).json({
+      message: 'Server error',
+      error: err.message
     });
   }
 };
-
-//i couldnt get fetching by associaztions working so shitty hack above sorry

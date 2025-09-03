@@ -39,9 +39,24 @@ const router = express.Router();
  *                 dishName:
  *                   type: string
  *                   example: "Spicy Noodles"
+ *                 dishNameKh:
+ *                   type: string
+ *                   example: "មីហាល"
  *                 image:
  *                   type: string
  *                   example: "https://example.com/dishes/noodles.jpg"
+ *                 description:
+ *                   type: string
+ *                   example: "Delicious spicy noodles with vegetables"
+ *                 descriptionKh:
+ *                   type: string
+ *                   example: "មីហាលឆ្ងាញ់មានបន្លែ"
+ *                 categoryId:
+ *                   type: integer
+ *                   example: 3
+ *                 categoryName:
+ *                   type: string
+ *                   example: "Noodles"
  *                 updatedAt:
  *                   type: string
  *                   format: date-time
@@ -51,9 +66,10 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.get('/mine', authenticateToken,(req, res, next) => {
-    getMyWish(req as GetMyWishRequest, res).catch(next);
+router.get('/mine', authenticateToken, (req, res, next) => {
+  getMyWish(req as GetMyWishRequest, res).catch(next);
 });
+
 
 
 /**
@@ -166,7 +182,7 @@ router.get('/mine', authenticateToken,(req, res, next) => {
  *                   example: "Error details here"
  */
 router.get('/all', authenticateToken,(req, res, next) => {
-    updateWish(req as GetAllWishesRequest, res).catch(next);
+    getAllWishes(req as GetAllWishesRequest, res).catch(next);
 });
 
 
@@ -246,11 +262,11 @@ router.get('/all', authenticateToken,(req, res, next) => {
  *         description: Unauthorized
  */
 router.put('/', authenticateToken,(req, res, next) => {
-    removeWish(req as UpdateWishRequest, res).catch(next);
+    updateWish(req as UpdateWishRequest, res).catch(next);
 });
 
 router.delete('/', authenticateToken,(req, res, next) => {
-    getAllWishes(req as RemoveWishRequest, res).catch(next);
+    removeWish(req as RemoveWishRequest, res).catch(next);
 });
 
 

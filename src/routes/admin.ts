@@ -73,7 +73,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/staff', authenticateToken, authorizeRole('admin'), (req, res, next) => {
+router.post('/create-account', authenticateToken, authorizeRole('admin'), (req, res, next) => {
     addStaff(req as AddStaffRequest, res).catch(next);
 });
 /**
@@ -250,14 +250,13 @@ router.patch('/users/:id/reactivate', authenticateToken, authorizeRole('admin') 
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch('/users/:id/reactivate', authenticateToken, authorizeRole('admin') ,(req, res, next) => {
+router.get('/users', authenticateToken, authorizeRole('admin') ,(req, res, next) => {
     getAllUsers(req as GetAllUsersRequest, res).catch(next);
 });
 
-
 /**
  * @swagger
- * /api/feedback/{id}:
+ * /api/admin/feedback/{id}:
  *   delete:
  *     summary: Delete feedback (admin only)
  *     tags: [Admin]
@@ -343,8 +342,7 @@ router.patch('/users/:id/reactivate', authenticateToken, authorizeRole('admin') 
  *                   type: string
  *                   example: Internal server error. Please try again later.
  */
-
-router.patch('/users/:id/reactivate', authenticateToken, authorizeRole('admin') ,(req, res, next) => {
+router.delete('/feedback/:id', authenticateToken, authorizeRole('admin') ,(req, res, next) => {
     deleteFeedback(req as DeleteFeedbackRequest, res).catch(next);
 });
 

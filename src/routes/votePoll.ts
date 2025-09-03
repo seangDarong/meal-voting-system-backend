@@ -1,5 +1,5 @@
 import express from 'express';
-import {submitVoteOptions , getActiveVotePoll } from '@/controllers/canteen';
+import {submitVoteOptions , getActiveVotePoll } from '@/controllers/votePoll';
 import { authenticateToken } from '@/middlewares/auth';
 import { authorizeRole } from '@/middlewares/authorizeRole';
 

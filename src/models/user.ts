@@ -19,20 +19,19 @@ interface UserCreationAttributes extends Optional<UserAttributes,
   'id' | 'isActive' | 'createdAt' | 'updatedAt' | 
   'password' | 'expectedGraduationDate' | 'microsoftId' | 'googleId' | 'displayName'
 > {}
-class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
-  public id!: string;
-  public email!: string;
-  public password!: string | null;
-  public role!: 'admin' | 'staff' | 'voter';
-  public isActive!: boolean;
-  public expectedGraduationDate!: Date | null;
-  public microsoftId!: string | null;
-  public displayName!: string | null;
-  public googleId!: string | null;
-  
-  // Timestamps
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+export default class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
+  // Use `declare` so no JS fields are emitted (prevents shadowing)
+  declare id: string;
+  declare email: string;
+  declare password: string | null;
+  declare role: 'voter' | 'staff' | 'admin';
+  declare isActive: boolean;
+  declare expectedGraduationDate: Date | null;
+  declare microsoftId: string | null;
+  declare googleId: string | null;
+  declare displayName: string | null;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 User.init(
@@ -40,58 +39,19 @@ User.init(
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
+      primaryKey: true
     },
-    email: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-      validate: {
-        isEmail: true,
-      },
-    },
-    password: {
-      type: DataTypes.STRING,
-      allowNull: true, // Password can be null for OAuth users
-      validate: {
-        len: [6, 100], // Minimum length for password
-      },
-    },
-    role: {
-      type: DataTypes.ENUM('admin', 'staff', 'voter'),
-      allowNull: false,
-      defaultValue: 'voter',
-    },
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
-    },
-    expectedGraduationDate: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    microsoftId: {
-      type: DataTypes.STRING,
-      allowNull: true,
-      unique: true,
-    },
-    displayName: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
-    googleId: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-  }, 
-  {
-    sequelize,
-    modelName: 'User',
-    tableName: 'Users',
-    timestamps: true,
-  }
+    email: { type: DataTypes.STRING, allowNull: false, unique: true },
+    password: { type: DataTypes.STRING, allowNull: true },
+    role: { type: DataTypes.ENUM('voter', 'staff', 'admin'), allowNull: false, defaultValue: 'voter' },
+    isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    expectedGraduationDate: { type: DataTypes.DATE, allowNull: true },
+    microsoftId: { type: DataTypes.STRING, allowNull: true },
+    googleId: { type: DataTypes.STRING, allowNull: true },
+    displayName: { type: DataTypes.STRING, allowNull: true },
+  },
+  { sequelize, modelName: 'User', tableName: 'Users' }
 );
 
-export default User;
 
 export type { UserAttributes, UserCreationAttributes };

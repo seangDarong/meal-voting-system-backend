@@ -32,6 +32,10 @@ Dish.belongsTo(User,{foreignKey: 'userId'});
 User.hasOne(WishList,{foreignKey: 'userId',onDelete: 'CASCADE'});
 WishList.belongsTo(User,{foreignKey: 'userId',onDelete: 'CASCADE'});
 
+// Associations (ensure FK types match UUID)
+User.hasMany(WishList, { foreignKey: 'userId', sourceKey: 'id', onDelete: 'CASCADE' });
+WishList.belongsTo(User, { foreignKey: 'userId', targetKey: 'id' });
+
 Dish.hasMany(WishList,{foreignKey: 'dishId',onDelete: 'CASCADE'});
 WishList.belongsTo(Dish,{foreignKey: 'dishId',onDelete: 'CASCADE'});
 
@@ -50,6 +54,9 @@ Vote.belongsTo(Dish, { foreignKey: 'dishId' });
 
 VotePoll.hasMany(Vote, { foreignKey: 'votePollId', onDelete: 'CASCADE' });
 Vote.belongsTo(VotePoll, { foreignKey: 'votePollId' });
+
+Dish.hasMany(Feedback, { foreignKey: 'dishId', onDelete: 'CASCADE' });
+Feedback.belongsTo(Dish, { foreignKey: 'dishId' });
 
 interface Database {
     sequelize: typeof sequelize;
