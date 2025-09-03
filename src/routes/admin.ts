@@ -4,9 +4,11 @@ import { addStaff,
     deactivateUser,
     reactivateUser,
     getAllUsers,
-    deleteFeedback } from '../controllers/admin.js';
-import { authenticateToken } from '../middlewares/auth.js';
-import { authorizeRole } from '../middlewares/authorizeRole.js';
+    deleteFeedback } from '@/controllers/admin';
+import { authenticateToken } from '@/middlewares/auth';
+import { authorizeRole } from '@/middlewares/authorizeRole';
+
+import { AddStaffRequest, DeleteUserRequest, DeactivateUserRequest, ReactivateUserRequest, GetAllUsersRequest, DeleteFeedbackRequest } from '@/types/requests';
 
 const router = express.Router();
 
@@ -71,8 +73,9 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/create-account', authenticateToken, authorizeRole('admin'), addStaff);
-
+router.post('/create-account', authenticateToken, authorizeRole('admin'), (req, res, next) => {
+    addStaff(req as AddStaffRequest, res).catch(next);
+});
 /**
  * @swagger
  * /api/admin/users/{id}:
@@ -115,7 +118,9 @@ router.post('/create-account', authenticateToken, authorizeRole('admin'), addSta
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.delete('/users/:id', authenticateToken, authorizeRole('admin'), deleteUser);
+router.delete('/users/:id', authenticateToken, authorizeRole('admin'), (req, res, next) => {
+    deleteUser(req as DeleteUserRequest, res).catch(next);
+});
 
 /**
  * @swagger
@@ -159,7 +164,9 @@ router.delete('/users/:id', authenticateToken, authorizeRole('admin'), deleteUse
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch('/users/:id/deactivate', authenticateToken, authorizeRole('admin'), deactivateUser);
+router.patch('/users/:id/deactivate', authenticateToken, authorizeRole('admin') ,(req, res, next) => {
+    deactivateUser(req as DeactivateUserRequest, res).catch(next);
+});
 
 /**
  * @swagger
@@ -203,7 +210,9 @@ router.patch('/users/:id/deactivate', authenticateToken, authorizeRole('admin'),
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.patch('/users/:id/reactivate', authenticateToken, authorizeRole('admin'), reactivateUser);
+router.patch('/users/:id/reactivate', authenticateToken, authorizeRole('admin') ,(req, res, next) => {
+    reactivateUser(req as ReactivateUserRequest, res).catch(next);
+});
 
 /**
  * @swagger
@@ -241,12 +250,13 @@ router.patch('/users/:id/reactivate', authenticateToken, authorizeRole('admin'),
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get('/users', authenticateToken, authorizeRole('admin'), getAllUsers);
-
+router.get('/users', authenticateToken, authorizeRole('admin') ,(req, res, next) => {
+    getAllUsers(req as GetAllUsersRequest, res).catch(next);
+});
 
 /**
  * @swagger
- * /api/feedback/{id}:
+ * /api/admin/feedback/{id}:
  *   delete:
  *     summary: Delete feedback (admin only)
  *     tags: [Admin]
@@ -332,7 +342,8 @@ router.get('/users', authenticateToken, authorizeRole('admin'), getAllUsers);
  *                   type: string
  *                   example: Internal server error. Please try again later.
  */
-
-router.delete('/feedback/:id', authenticateToken, deleteFeedback);
+router.delete('/feedback/:id', authenticateToken, authorizeRole('admin') ,(req, res, next) => {
+    deleteFeedback(req as DeleteFeedbackRequest, res).catch(next);
+});
 
 export default router;

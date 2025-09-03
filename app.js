@@ -20,6 +20,7 @@ import { microsoftAuthStrategy, googleAuthStrategy } from './controllers/user.js
 import userRoutes from './routes/user.js';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import googleRoutes from './routes/google.js'; 
+import feedbackRoutes from './routes/feedback.js';
 
 dotenv.config();
 
@@ -76,6 +77,7 @@ app.use('/auth/microsoft', microsoftRoutes);
 app.use('/auth/google', googleRoutes)
 
 app.use('/api/results',resultRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 
 app.get('/', (req, res) => {
@@ -84,7 +86,7 @@ app.get('/', (req, res) => {
 
 // Sync DB
 try {
-    await db.sequelize.sync({force: false}); // Removed force: true to preserve data
+    await db.sequelize.sync({force: true}); // Removed force: true to preserve data
 
     console.log('Database synced');
 } catch (err) {

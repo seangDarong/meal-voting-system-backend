@@ -40,9 +40,31 @@ const options = {
                             enum: ['admin', 'staff', 'voter'],
                             description: 'User role'
                         },
+                        isVerified: {
+                            type: 'boolean',
+                            description: 'Email verification status'
+                        },
                         isActive: {
                             type: 'boolean',
                             description: 'Account active status'
+                        },
+                        verificationToken: {
+                            type: 'string',
+                            description: 'Email verification token'
+                        },
+                        verificationExpires: {
+                            type: 'string',
+                            format: 'date-time',
+                            description: 'Verification token expiry date'
+                        },
+                        resetPasswordToken: {
+                            type: 'string',
+                            description: 'Password reset token'
+                        },
+                        resetPasswordExpires: {
+                            type: 'string',
+                            format: 'date-time',
+                            description: 'Password reset token expiry date'
                         },
                         expectedGraduationDate: {
                             type: 'string',
@@ -56,10 +78,6 @@ const options = {
                         displayName: {
                             type: 'string',
                             description: 'Display name from Microsoft'
-                        },
-                        googleId: {
-                            type: 'string',
-                            description: 'Google account identifier'
                         },
                         createdAt: {
                             type: 'string',
@@ -301,14 +319,6 @@ const options = {
                             type: 'integer',
                             description: 'Feedback unique identifier'
                         },
-                        canteen: {
-                            type: 'integer',
-                            description: 'Canteen rating'
-                        },
-                        system: {
-                            type: 'integer',
-                            description: 'System rating'
-                        },
                         content: {
                             type: 'string',
                             description: 'Feedback content'
@@ -394,7 +404,7 @@ const options = {
             },
         ],
     },
-    apis: ['controllers/*.js', 'routes/*.js'],
+    apis: ['./src/controllers/*.ts', './src/routes/*.ts'],
 };
 
 const swaggerSpec = swaggerJSDoc(options);

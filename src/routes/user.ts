@@ -1,0 +1,71 @@
+import express from 'express';
+import { 
+    signOut,
+    getOwnProfile,
+} from '@/controllers/user';
+import { authenticateToken } from '@/middlewares/auth';
+
+import { GetOwnProfileRequest, DeactivateOwnAccountRequest } from '@/types/requests';
+
+const router = express.Router();
+
+/**
+ * @swagger
+ * tags:
+ *   name: User
+ *   description: User profile and account operations
+ */
+
+/**
+ * @swagger
+ * /api/user/profile:
+ *   get:
+ *     summary: Get current user's profile
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/profile', authenticateToken,(req, res, next) => {
+    getOwnProfile(req as GetOwnProfileRequest, res).catch(next);
+});
+
+
+/**
+ * @swagger
+ * /api/user/signout:
+ *   post:
+ *     summary: Sign out user
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Signed out successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Success'
+ */
+router.post('/signout', authenticateToken, signOut);
+
+
+export default router;

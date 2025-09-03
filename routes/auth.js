@@ -1,6 +1,7 @@
 import express from 'express';
 import { 
-    setupGraduationDate
+    setupGraduationDate,
+    staffLogin
 } from '../controllers/user.js';
 import { authenticateToken } from '../middlewares/auth.js';
 
@@ -24,7 +25,7 @@ const router = express.Router();
  */
 
 // ===== BASIC AUTHENTICATION ROUTES =====
-
+router.post('/staff-login', staffLogin);
 
 // ===== MICROSOFT AUTHENTICATION ROUTES =====
 
