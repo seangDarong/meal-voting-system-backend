@@ -8,7 +8,7 @@
     import WishList from "@/models/wishList";
     import VoteHistory from "@/models/voteHistory";
     import Feedback from "@/models/feedback";
-    import CandidateDishHistory from "@/models/candidateDishHistory";
+
 
     // Associations
 
@@ -48,9 +48,6 @@
     Dish.hasMany(VoteHistory, { foreignKey: "dishId" });
     VoteHistory.belongsTo(Dish, { foreignKey: "dishId", onDelete: "CASCADE" });
 
-    // Dish -> CandidateDishHistory
-    Dish.hasMany(CandidateDishHistory, { foreignKey: "dishId", onDelete: "CASCADE" });
-    CandidateDishHistory.belongsTo(Dish, { foreignKey: "dishId" });
 
     // Dish -> Vote
     Dish.hasMany(Vote, { foreignKey: "dishId", onDelete: "CASCADE" });
@@ -72,7 +69,6 @@
     WishList: typeof WishList;
     VoteHistory: typeof VoteHistory;
     Feedback: typeof Feedback;
-    CandidateDishHistory: typeof CandidateDishHistory;
     }
 
     // DB object
@@ -87,7 +83,6 @@
     WishList,
     VoteHistory,
     Feedback,
-    CandidateDishHistory,
     };
 
     export default db;
