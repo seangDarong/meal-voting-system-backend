@@ -1,11 +1,11 @@
 import express from 'express';
-import {submitVoteOptions , getActiveVotePoll } from '@/controllers/votePoll';
+import {submitVoteOptions , finalizeVotePoll } from '@/controllers/votePoll';
 import { authenticateToken } from '@/middlewares/auth';
 import { authorizeRole } from '@/middlewares/authorizeRole';
 
-import { SubmitVoteOptionsRequest, GetActiveVotePollRequest } from '@/types/requests';
+import { SubmitVoteOptionsRequest, GetActiveVotePollRequest , FinalizeVotePollRequest } from '@/types/requests';
 
-const canteenRouter = express.Router();
+const votePollRouter = express.Router();
 
 /**
  * @swagger
@@ -87,11 +87,14 @@ const canteenRouter = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-canteenRouter.post('/',authenticateToken,authorizeRole('staff'),(req, res, next) => {
+votePollRouter.post('/',authenticateToken,authorizeRole('staff'),(req, res, next) => {
     submitVoteOptions(req as SubmitVoteOptionsRequest, res).catch(next);
 });
-canteenRouter.get('/active',(req, res, next) => {
-    getActiveVotePoll(req as GetActiveVotePollRequest, res).catch(next);
+
+votePollRouter.post('/:id/finalize',authenticateToken,authorizeRole('staff'),(req,res,next) => {
+    finalizeVotePoll(req as FinalizeVotePollRequest, res).catch(next);
 });
 
-export default canteenRouter;
+
+
+export default votePollRouter;

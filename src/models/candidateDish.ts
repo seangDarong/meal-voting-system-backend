@@ -6,7 +6,8 @@ interface CandidateDishAttributes {
   id?: number;
   votePollId: number;
   dishId: number;
-  isSelected: boolean;
+  isSelected: boolean
+  ;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -16,14 +17,14 @@ interface CandidateDishCreationAttributes extends Optional<CandidateDishAttribut
 
 // Define CandidateDish model class
 class CandidateDish extends Model<CandidateDishAttributes, CandidateDishCreationAttributes> implements CandidateDishAttributes {
-  public id!: number;
-  public votePollId!: number;
-  public dishId!: number;
-  public isSelected!: boolean;
+  declare id: number;
+  declare votePollId: number;
+  declare dishId: number;
+  declare isSelected: boolean;
   
   // Timestamps
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 CandidateDish.init(
