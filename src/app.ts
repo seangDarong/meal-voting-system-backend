@@ -24,7 +24,7 @@ import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import googleRoutes from '@/routes/google'; 
 
 import voteRoutes from '@/routes/vote';
-import cookieParser from 'cookie-parser';
+
 
 import feedbackRoutes from '@/routes/feedback';
 

@@ -10,16 +10,16 @@ const votePollRouter = express.Router();
 /**
  * @swagger
  * tags:
- *   name: Canteen
+ *   name: VotePoll
  *   description: Canteen voting operations
  */
 
 /**
  * @swagger
- * /api/vote-option:
+ * /api/polls:
  *   post:
  *     summary: Submit vote options for a poll (Staff only)
- *     tags: [Canteen]
+ *     tags: [VotePoll]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -30,17 +30,12 @@ const votePollRouter = express.Router();
  *             type: object
  *             required:
  *               - mealDate
- *               - voteDate
  *               - dishIds
  *             properties:
  *               mealDate:
  *                 type: string
  *                 format: date
  *                 description: Date for the meal
- *               voteDate:
- *                 type: string
- *                 format: date
- *                 description: Date when voting takes place
  *               dishIds:
  *                 type: array
  *                 items:
@@ -49,47 +44,60 @@ const votePollRouter = express.Router();
  *     responses:
  *       201:
  *         description: Vote options submitted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
- *                   properties:
- *                     votePoll:
- *                       $ref: '#/components/schemas/VotePoll'
- *                     candidateDishes:
- *                       type: array
- *                       items:
- *                         $ref: '#/components/schemas/CandidateDish'
  *       400:
  *         description: Validation error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  *       401:
  *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  *       403:
  *         description: Forbidden - Staff role required
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Poll already exists for this mealDate
  */
 votePollRouter.post('/',authenticateToken,authorizeRole('staff'),(req, res, next) => {
     submitVoteOptions(req as SubmitVoteOptionsRequest, res).catch(next);
 });
+
+/**
+ * @swagger
+ * /api/polls/{id}/finalize:
+ *   post:
+ *     summary: Finalize a vote poll with selected dishes (Staff only)
+ *     tags: [VotePoll]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the poll to finalize
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - selectedDishIds
+ *             properties:
+ *               selectedDishIds:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: Dish IDs that were finalized
+ *     responses:
+ *       200:
+ *         description: Poll finalized successfully
+ *       400:
+ *         description: Invalid request (e.g., poll not closed, invalid dishes)
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Staff role required
+ *       404:
+ *         description: Poll not found
+ */
 
 votePollRouter.post('/:id/finalize',authenticateToken,authorizeRole('staff'),(req,res,next) => {
     finalizeVotePoll(req as FinalizeVotePollRequest, res).catch(next);
