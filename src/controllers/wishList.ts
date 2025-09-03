@@ -55,7 +55,6 @@ export const getMyWish = async (req: GetMyWishRequest, res: Response): Promise<R
         attributes: ['name', 'imageURL', 'description', 'description_kh', 'name_kh', 'categoryId'],
         include: [{ 
           model: Category, 
-          as: 'category',
           attributes: ['name', 'name_kh'] 
         }]
       }]
