@@ -1,8 +1,7 @@
 import express from 'express';
 import { 
     signOut,
-    deactivateOwnAccount,
-    getOwnProfile
+    getOwnProfile,
 } from '@/controllers/user';
 import { authenticateToken } from '@/middlewares/auth';
 
@@ -52,50 +51,6 @@ router.get('/profile', authenticateToken,(req, res, next) => {
 
 /**
  * @swagger
- * /api/user/deactivate:
- *   put:
- *     summary: Deactivate own account
- *     tags: [User]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - password
- *             properties:
- *               password:
- *                 type: string
- *                 description: Current password for confirmation
- *     responses:
- *       200:
- *         description: Account deactivated successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Success'
- *       400:
- *         description: Invalid password
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-router.put('/deactivate', authenticateToken,(req, res, next) => {
-    deactivateOwnAccount(req as DeactivateOwnAccountRequest, res).catch(next);
-});
-
-/**
- * @swagger
  * /api/user/signout:
  *   post:
  *     summary: Sign out user
@@ -111,5 +66,6 @@ router.put('/deactivate', authenticateToken,(req, res, next) => {
  *               $ref: '#/components/schemas/Success'
  */
 router.post('/signout', authenticateToken, signOut);
+
 
 export default router;

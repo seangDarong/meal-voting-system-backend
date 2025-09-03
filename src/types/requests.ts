@@ -145,11 +145,6 @@ export interface StaffLoginRequest extends Request {
   };
 }
 
-export interface DeactivateOwnAccountRequest extends AuthenticatedRequest {
-  body: {
-    confirmPassword: string;
-  };
-}
 
 export interface GetOwnProfileRequest extends AuthenticatedRequest {
 }

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import db from '@/models/index';
+import cookieParser from 'cookie-parser';
 //routes
 import dishRoutes from '@/routes/dish'
 import resultRoutes from '@/routes/result'
@@ -10,6 +11,7 @@ import session from 'express-session';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import jwt from 'jsonwebtoken';
 import authRoutes from '@/routes/auth';
+
 import votePollRoutes from '@/routes/votePoll';
 import {serveSwagger, setupSwagger} from "@/config/swagger";
 import categoryRoutes from '@/routes/category'
@@ -20,13 +22,23 @@ import { microsoftAuthStrategy, googleAuthStrategy } from '@/controllers/user';
 import userRoutes from '@/routes/user';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import googleRoutes from '@/routes/google'; 
+
 import voteRoutes from '@/routes/vote';
 import cookieParser from 'cookie-parser';
+
+import feedbackRoutes from '@/routes/feedback';
+
+
 dotenv.config();
+
 
 
 const app = express();
 app.use(cookieParser());
+
+ 
+
+
 app.use(session({ 
     secret: process.env.SESSION_SECRET || "SECRET", 
     resave: false, 
@@ -89,6 +101,7 @@ app.use('/api/polls', votePollRoutes);
 app.use('/api/categories', categoryRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishes', wishesRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 app.use('/api/user', userRoutes);
 app.use('/auth/microsoft', microsoftRoutes); 
