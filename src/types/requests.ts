@@ -191,3 +191,10 @@ export interface UpdateVoteRequest extends AuthenticatedRequest {
     dishId?: number;
   }
 }
+
+//get vote history
+export interface GetUserVoteHistoryRequest extends AuthenticatedRequest {
+  body:{
+    date?: string;
+  }
+}

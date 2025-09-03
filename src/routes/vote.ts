@@ -1,9 +1,9 @@
 import express from 'express';
-import {castVote, updateVote } from '@/controllers/vote';
+import {castVote, getUserVoteHistory, updateVote } from '@/controllers/vote';
 import { authenticateToken } from '@/middlewares/auth';
 import { authorizeRole } from '@/middlewares/authorizeRole';
 
-import { CastVoteRequest , UpdateVoteRequest} from '@/types/requests';
+import { CastVoteRequest , UpdateVoteRequest , GetUserVoteHistoryRequest} from '@/types/requests';
 
 const voteRouter = express.Router();
 
@@ -173,6 +173,10 @@ voteRouter.post('/',authenticateToken,authorizeRole('voter'),(req,res,next) => {
 voteRouter.put('/',authenticateToken,authorizeRole('voter'),(req,res,next) => {
     updateVote(req as UpdateVoteRequest, res).catch(next);
 });
+
+voteRouter.get('/history',authenticateToken,authorizeRole('voter'),(req,res,next) => {
+    getUserVoteHistory(req as GetUserVoteHistoryRequest, res).catch(next);
+})
 
 
 

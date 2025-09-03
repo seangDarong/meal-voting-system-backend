@@ -1,12 +1,20 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import db from '@/models/index';
-import { CastVoteRequest , UpdateVoteRequest } from '@/types/requests';
+import { CastVoteRequest , UpdateVoteRequest ,GetUserVoteHistoryRequest } from '@/types/requests';
 
 const VotePoll = db.VotePoll;
 const CandidateDish = db.CandidateDish;
 const Dish = db.Dish; 
 const Vote = db.Vote;
+
+    interface DishVoteResult {
+    candidateDishId: number;
+    dishId: number;
+    dish: string;
+    voteCount: number;
+    }
+
 
 export const castVote = async (req: CastVoteRequest, res: Response) => {
     try {
@@ -159,9 +167,106 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
         message: "Vote updated successfully.",
         vote: updatedVote,
         });
-        
+
     } catch (error) {
         console.error("updateVote error:", error);
         return res.status(500).json({ error: "Internal server error" });
     }
 };
+
+    export const getUserVoteHistory = async (req: GetUserVoteHistoryRequest, res: Response) => {
+    try {
+        const userId = req.user?.id;
+        const { date } = req.body;
+
+        if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        // If no date provided, use today
+        const inputDate = date ? new Date(date) : new Date();
+        if (isNaN(inputDate.getTime())) {
+        return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+        }
+
+        inputDate.setHours(0, 0, 0, 0);
+        const nextDay = new Date(inputDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        // Find poll on that date
+        const poll = await VotePoll.findOne({
+        where: {
+            voteDate: { [Op.gte]: inputDate, [Op.lt]: nextDay },
+            status: { [Op.in]: ["open", "close", "finalized"] },
+        },
+        include: [
+            {
+            model: CandidateDish,
+            include: [
+                {
+                model: Dish,
+                attributes: { exclude: ["createdAt", "updatedAt"] },
+                },
+            ],
+            attributes: { exclude: ["createdAt", "updatedAt"] },
+            },
+        ],
+        attributes: { exclude: ["createdAt", "updatedAt"] },
+        });
+
+        if (!poll) {
+        return res.status(404).json({ message: "No poll found for this date." });
+        }
+
+        const plainPoll = poll.get({ plain: true }) as any;
+
+        // Find user’s vote in this poll with Dish details
+        const userVote = await Vote.findOne({
+        where: { votePollId: poll.id, userId },
+        include: [
+            {
+            model: Dish,
+            attributes: { exclude: ["createdAt", "updatedAt"] },
+            },
+        ],
+        attributes: { exclude: ["createdAt", "updatedAt"] },
+        });
+
+        // If poll is finalized, return finalized format
+        if (poll.status === "finalized") {
+        return res.status(200).json({
+            votePollId: plainPoll.id,
+            mealDate: plainPoll.mealDate,
+            voteDate: plainPoll.voteDate,
+            userVote: userVote ?? null,
+            selectedDishes: plainPoll.CandidateDishes.filter((cd: any) => cd.isSelected),
+        });
+        }
+
+        // If poll is open or close, return current vote counts
+        const dishesWithVotes: DishVoteResult[] = await Promise.all(
+        (plainPoll.CandidateDishes ?? []).map(async (cd: any) => {
+            const voteCount = await Vote.count({
+            where: { dishId: cd.dishId, votePollId: cd.votePollId },
+            });
+            return {
+            candidateDishId: cd.id,
+            dishId: cd.dishId,
+            dish: cd.Dish?.name ?? "Unknown",
+            voteCount,
+            };
+        })
+        );
+
+        return res.status(200).json({
+        votePollId: plainPoll.id,
+        mealDate: plainPoll.mealDate,
+        voteDate: plainPoll.voteDate,
+        userVote: userVote ?? null,
+        dishes: dishesWithVotes,
+        });
+    } catch (error) {
+        console.error("getUserVoteHistory error:", error);
+        return res.status(500).json({ message: "Internal server error cannot get user vote history" });
+    }
+    };
