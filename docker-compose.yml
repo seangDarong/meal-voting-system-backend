@@ -7,8 +7,14 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
+    environment:
+      - DB_HOST=localhost
+      - POSTGRES_PROD_PORT=30002
     env_file:
-      - .env
+      - .env.dev
+
+
+    
 
 volumes:
   baycanteen_postgres_data:
