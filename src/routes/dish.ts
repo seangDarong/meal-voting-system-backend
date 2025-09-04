@@ -19,7 +19,7 @@ const dishRouter = express.Router();
  * @swagger
  * /api/dishes:
  *   post:
- *     summary: Add a new dish (Staff only)
+ *     summary: Add a new dish 
  *     tags: [Dishes]
  *     security:
  *       - bearerAuth: []
@@ -72,6 +72,7 @@ const dishRouter = express.Router();
  *                   example: true
  *                 message:
  *                   type: string
+ *                   example: Dish created successfully
  *                 data:
  *                   $ref: '#/components/schemas/Dish'
  *       400:
@@ -92,26 +93,50 @@ const dishRouter = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *
  *   get:
- *     summary: Get all dishes (Staff only)
+ *     summary: Get all dishes with pagination (Staff only)
  *     tags: [Dishes]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 50
+ *         description: Number of dishes to return (max 50)
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of items to skip
  *     responses:
  *       200:
- *         description: List of all dishes
+ *         description: List of dishes with pagination
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
+ *                 message:
+ *                   type: string
+ *                   example: Dishes fetched successfully
+ *                 items:
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Dish'
+ *                 total:
+ *                   type: integer
+ *                   description: Total number of dishes
+ *                   example: 120
+ *                 nextOffset:
+ *                   type: integer
+ *                   nullable: true
+ *                   description: Offset for the next page, or null if no more data
+ *                   example: 10
  *       401:
  *         description: Unauthorized
  *         content:
@@ -124,11 +149,17 @@ const dishRouter = express.Router();
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Internal server error while fetching dishes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 dishRouter.post('/', authenticateToken,authorizeRole('staff'),upload.single('imageFile'),(req, res, next) => {
     addDish(req as AddDishRequest, res).catch(next);
 });
-dishRouter.get('/',authenticateToken,authorizeRole('staff'),getAllDishes);
+dishRouter.get('/', getAllDishes);
 
 /**
  * @swagger
