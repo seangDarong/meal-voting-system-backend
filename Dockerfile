@@ -12,10 +12,10 @@ RUN npm install
 COPY . . 
 
 # Build the application
-RUN npm run build
+RUN npm run build-ts
 
-# Expose the application on port 7000
+# Expose the application on port 3000
 EXPOSE 3000
 
 # Command to run the application
-CMD ["npm", "run", "start"]
+CMD ["npm", "run", "start-ts"]
