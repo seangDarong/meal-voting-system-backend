@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
-      - DB_HOST=localhost
+      - DB_HOST="172.29.0.2"
       - POSTGRES_PROD_PORT=30002
     env_file:
       - .env
