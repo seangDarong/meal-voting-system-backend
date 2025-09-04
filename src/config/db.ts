@@ -11,7 +11,7 @@ const sequelize = new Sequelize(
     {
         // port: process.env.DB_PORT || 5432,
         port: port || 30002,
-        host: process.env.DB_HOST,
+        host: process.env.DB_HOST|| "172.29.0.2",
         dialect: process.env.DB_DIALECT!! as 'postgres' | 'mysql' | 'sqlite' | 'mssql',
         logging: true, // optional
     }
