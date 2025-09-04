@@ -6,24 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-
-    depends_on:
-      - db
     restart: always
-
-  db:
-    image: postgres
-
-    environment:
-      - POSTGRES_DB
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD
-
-    ports:
-     - ${POSTGRES_PROD_PORT}:5432
-
-    volumes:
-      - baycanteen_postgres_data:/var/lib/postgresql/data
-
+    
 volumes:
   baycanteen_postgres_data:
