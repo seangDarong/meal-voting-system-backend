@@ -375,13 +375,13 @@ export const handleMicrosoftCallback = async (req: Request, res: Response): Prom
         needs_graduation: 'true',
         provider: 'microsoft'
       });
-      res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/setup-account?${setupParams.toString()}`);
+      res.redirect(`${process.env.FRONTEND_URL}/setup-account?${setupParams.toString()}`);
       return;
     }
 
-    res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/auth/callback?token=${token}&provider=microsoft`);
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}&provider=microsoft`);
   } catch (error: any) {
-    res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/login?error=token_generation_failed`);
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=token_generation_failed`);
   }
 };
 

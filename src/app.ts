@@ -53,7 +53,7 @@ if (process.env.MS_CLIENT_ID && process.env.MS_CLIENT_SECRET) {
     passport.use(new MicrosoftStrategy({
       clientID: process.env.MS_CLIENT_ID,
       clientSecret: process.env.MS_CLIENT_SECRET,
-      callbackURL: process.env.MS_CALLBACK_URL || "http://localhost:3000/auth/microsoft/callback",
+      callbackURL: process.env.MS_CALLBACK_URL || "https://baycanteen-api.sliden.pro/auth/microsoft/callback",
       scope: ['user.read'],
       tenant: process.env.MS_TENANT_ID
     }, microsoftAuthStrategy));
@@ -66,7 +66,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback',
+          callbackURL: process.env.GOOGLE_CALLBACK_URL || 'https://baycanteen-api.sliden.pro/auth/google/callback',
         },
         googleAuthStrategy //Fuck this shit
       )
@@ -119,7 +119,7 @@ app.get('/', (req, res) => {
 // Sync DB
 (async () => {
     try {
-        await db.sequelize.sync({force: true}); // Removed force: true to preserve data
+        await db.sequelize.sync({force: false}); // Removed force: true to preserve data
     
         console.log('Database synced');
     } catch (err) {
