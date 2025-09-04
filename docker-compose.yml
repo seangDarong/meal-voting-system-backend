@@ -7,6 +7,8 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: always
-    
+    env_file:
+      - .env
+
 volumes:
   baycanteen_postgres_data:
