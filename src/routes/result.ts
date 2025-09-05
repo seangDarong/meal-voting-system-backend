@@ -37,6 +37,9 @@ const resultRouter = express.Router();
  *                   type: string
  *                   format: date
  *                   example: "2025-09-02"
+ *                 status:
+ *                   type: string
+ *                   example: "open"
  *                 dishes:
  *                   type: array
  *                   items:

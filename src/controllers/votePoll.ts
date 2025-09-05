@@ -188,6 +188,7 @@ export const getTodayVoteResult = async (req: GetTodayVoteResultRequest, res: Re
       votePollId: plainPoll.id,
       mealDate: plainPoll.mealDate,
       voteDate: plainPoll.voteDate,
+      status: plainPoll.status,
       dishes: dishesWithVotes,
     });
   } catch (err: any) {
