@@ -21,7 +21,7 @@ services:
     environment:
       - POSTGRES_PROD_PORT=5432
     depends_on:
-      baycanteen-db:
+      - baycanteen-db
     env_file:
       - .env
 
