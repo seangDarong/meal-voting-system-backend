@@ -92,7 +92,7 @@ export const getFeedback = async (
     if (isNaN(offsetNum) || offsetNum < 0) offsetNum = 0;
 
     const { count: total, rows } = await Feedback.findAndCountAll({
-      where: { dishId: null },
+      // where: { dishId: null },
       attributes: ["id", "canteen", "system", "content", "createdAt"],
       order: [["createdAt", "DESC"]],
       limit: limitNum,
