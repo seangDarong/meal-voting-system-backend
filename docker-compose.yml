@@ -1,4 +1,20 @@
 services:
+  baycanteen-db:
+    image: postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - ${POSTGRES_PROD_PORT}:5432
+    volumes:
+      - app-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   backend-baycanteen: 
     image: node:20-slim
     ports:
@@ -8,7 +24,10 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
-      - POSTGRES_PROD_PORT=30002
+      - POSTGRES_PROD_PORT=5432
+    depends_on:
+      baycanteen-db:
+        condition: service_healthy
     env_file:
       - .env
 
@@ -16,4 +35,4 @@ services:
     
 
 volumes:
-  baycanteen_postgres_data:
+  app-volume:
