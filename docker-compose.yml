@@ -9,6 +9,11 @@ services:
       - ${POSTGRES_PROD_PORT}:5432
     volumes:
       - app-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend-baycanteen: 
     image: node:20-slim
@@ -21,7 +26,8 @@ services:
     environment:
       - POSTGRES_PROD_PORT=5432
     depends_on:
-      - baycanteen-db
+      baycanteen-db:
+        condition: service_healthy
     env_file:
       - .env
 
