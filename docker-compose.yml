@@ -19,7 +19,9 @@ services:
       dockerfile: Dockerfile
     restart: always
     environment:
-      - POSTGRES_PROD_PORT=30002
+      - POSTGRES_PROD_PORT=5432
+    depends_on:
+      baycanteen-db:
     env_file:
       - .env
 
