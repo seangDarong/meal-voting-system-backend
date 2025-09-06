@@ -7,6 +7,7 @@ import { UserAttributes, UserCreationAttributes } from '@/models/user';
 import Feedback from '@/models/feedback';
 
 import { AddStaffRequest, DeleteUserRequest, DeactivateUserRequest, ReactivateUserRequest, GetAllUsersRequest, DeleteFeedbackRequest } from '@/types/requests';
+import SystemFeedback from '@/models/systemFeedback';
 
 const User = db.User;
 
@@ -423,3 +424,49 @@ export const deleteFeedback = async (req: DeleteFeedbackRequest, res: Response) 
       });
   }
 };
+
+export const deleteSystemFeedback = async (req: DeleteFeedbackRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user is admin
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({
+            success: false,
+            error: 'Only admin users can delete feedback.'
+        });
+    }
+
+    // Validate feedback ID
+    if (!id) {
+        return res.status(400).json({
+            success: false,
+            error: 'Feedback ID is required.'
+        });
+    }
+
+    // Find feedback
+    const feedback = await SystemFeedback.findByPk(id);
+    if (!feedback) {
+        return res.status(404).json({
+            success: false,
+            error: 'Feedback not found.'
+        });
+    }
+
+    // Delete feedback
+    await feedback.destroy();
+
+    res.status(200).json({
+        success: true,
+        message: 'Feedback deleted successfully.',
+        deletedId: id
+    });
+  } catch (error) {
+    console.error('Delete feedback error:', error);
+    res.status(500).json({
+        success: false,
+        error: 'Internal server error. Please try again later.'
+    });
+  }
+}

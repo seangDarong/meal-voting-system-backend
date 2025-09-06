@@ -27,6 +27,8 @@ import voteRoutes from '@/routes/vote';
 
 
 import feedbackRoutes from '@/routes/feedback';
+import systemFeedbackRoutes from '@/routes/systemFeedback';
+
 
 
 dotenv.config();
@@ -100,6 +102,7 @@ app.use('/api/categories', categoryRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishes', wishesRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/system-feedback', systemFeedbackRoutes);
 
 app.use('/api/user', userRoutes);
 app.use('/auth/microsoft', microsoftRoutes); 
