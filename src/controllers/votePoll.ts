@@ -313,6 +313,7 @@ export const getUpCommingMeal = async (req: GetUpCommingMealRequest, res: Respon
     votePollId: plainPoll.id,
     mealDate: plainPoll.mealDate,
     voteDate: plainPoll.voteDate,
+    status: plainPoll.status,
     dish : plainPoll.CandidateDishes
   });
 
