@@ -101,6 +101,9 @@ resultRouter.get('/today',(req, res, next) => {
  *                   type: string
  *                   format: date
  *                   example: "2025-09-03"
+ *                 status:
+ *                   type: string
+ *                   example: "finalize"
  *                 dish:
  *                   type: array
  *                   items:
