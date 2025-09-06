@@ -95,7 +95,7 @@ const dishRouter = express.Router();
  *               $ref: '#/components/schemas/Error'
  *
  *   get:
- *     summary: Get all dishes with pagination (Staff only)
+ *     summary: Get all dishes with pagination
  *     tags: [Dishes]
  *     security:
  *       - bearerAuth: []
@@ -290,7 +290,7 @@ dishRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req, res, nex
  * @swagger
  * /api/dishes/category/{categoryId}:
  *   get:
- *     summary: Get all dishes by category (Staff only)
+ *     summary: Get all dishes by category 
  *     tags: [Dishes]
  *     security:
  *       - bearerAuth: []
