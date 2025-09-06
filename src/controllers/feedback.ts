@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import Feedback, { FeedbackCreationAttributes } from "@/models/feedback";
+import SystemFeedback from "@/models/systemFeedback";
 
 // -------- Types for requests --------
 interface CreateFeedbackBody {
@@ -55,7 +56,7 @@ export const createFeedback = async (
       });
     }
 
-    await Feedback.create({
+    await SystemFeedback.create({
       canteen: typeof canteen === "number" ? canteen : null,
       system: typeof system === "number" ? system : null,
       content: typeof content === "string" ? content.trim() : null,
@@ -91,7 +92,7 @@ export const getFeedback = async (
     if (limitNum > 50) limitNum = 50;
     if (isNaN(offsetNum) || offsetNum < 0) offsetNum = 0;
 
-    const { count: total, rows } = await Feedback.findAndCountAll({
+    const { count: total, rows } = await SystemFeedback.findAndCountAll({
       // where: { dishId: null },
       attributes: ["id", "canteen", "system", "content", "createdAt"],
       order: [["createdAt", "DESC"]],

@@ -1,38 +1,34 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import sequelize from '@/config/db';
 
-// Define interface for Feedback attributes
-interface FeedbackAttributes {
+// Define interface for SystemFeedback attributes
+interface SystemFeedbackAttributes {
   id?: number;
   canteen: number | null;
-  food: number | null;
   system: number | null;
   content: string | null;
   userId?: string;
-  dishId?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-// Define interface for Feedback creation attributes
-interface FeedbackCreationAttributes extends Optional<FeedbackAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+// Define interface for SystemFeedback creation attributes
+interface SystemFeedbackCreationAttributes extends Optional<SystemFeedbackAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
-// Define Feedback model class
-class Feedback extends Model<FeedbackAttributes, FeedbackCreationAttributes> implements FeedbackAttributes {
+// Define SystemFeedback model class
+class SystemFeedback extends Model<SystemFeedbackAttributes, SystemFeedbackCreationAttributes> implements SystemFeedbackAttributes {
   public id!: number;
   public canteen!: number | null;
-  public food!: number | null;
   public system!: number | null;
   public content!: string | null;
   public userId!: string | undefined;
-  public dishId!: number | undefined;
   
   // Timestamps
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
-Feedback.init(
+SystemFeedback.init(
   {
     id: {
       type: DataTypes.INTEGER,
@@ -41,15 +37,19 @@ Feedback.init(
     },
     canteen: {
       type: DataTypes.INTEGER,
-      allowNull: true
-    },
-    food: {
-      type: DataTypes.INTEGER,
-      allowNull: true
+      allowNull: true,
+      validate: {
+        min: 1,
+        max: 5
+      }
     },
     system: {
       type: DataTypes.INTEGER,
-      allowNull: true
+      allowNull: true,
+      validate: {
+        min: 1,
+        max: 5
+      }
     },
     content: {
       type: DataTypes.STRING(250),
@@ -57,7 +57,6 @@ Feedback.init(
       validate: {
         len: [0, 250]
       }
-
     },
     userId: {
       type: DataTypes.UUID,
@@ -66,11 +65,11 @@ Feedback.init(
   }, 
   {
     sequelize,
-    modelName: 'Feedback',
-    tableName: 'Feedbacks',
+    modelName: 'SystemFeedback',
+    tableName: 'SystemFeedbacks',
     timestamps: true,
   }
 );
 
-export default Feedback;
-export type { FeedbackAttributes, FeedbackCreationAttributes };
+export default SystemFeedback;
+export type { SystemFeedbackAttributes, SystemFeedbackCreationAttributes };
