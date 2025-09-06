@@ -231,3 +231,28 @@ export const deleteDish = async (req: DeleteDishRequest, res: Response): Promise
     return res.status(500).json({ error: "Internal server error while deleting dishes" });
   }
 };
+
+export const getDishById = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const dishId = parseInt(req.params.id);
+    if (isNaN(dishId)) {
+      return res.status(400).json({ error: "Invalid dish ID" });
+    }
+
+    const dish = await Dish.findByPk(dishId, {
+      attributes: [
+        'id', 'name', 'name_kh', 'imageURL', 'ingredient', 'ingredient_kh',
+        'description', 'description_kh', 'categoryId'
+      ]
+    });
+
+    if (!dish) {
+      return res.status(404).json({ error: "Dish not found" });
+    }
+
+    return res.status(200).json({ dish });
+  } catch (error: any) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error while fetching dish" });
+  }
+};
