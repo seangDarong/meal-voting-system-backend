@@ -149,16 +149,28 @@ export const updateDish = async (req: UpdateDishRequest, res: Response): Promise
 // Get all dishes
 export const getAllDishes = async (req: Request, res: Response): Promise<Response> => {
   try {
-    const dishes = await Dish.findAll({
+    // Parse pagination params
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50); // max 50
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    const { count, rows } = await Dish.findAndCountAll({
       attributes: [
         'id', 'name', 'name_kh', 'imageURL', 'ingredient', 'ingredient_kh',
         'description', 'description_kh', 'categoryId'
-      ]
+      ],
+      limit,
+      offset,
+      order: [['id', 'ASC']]
     });
+
+    // Calculate nextOffset
+    const nextOffset = offset + limit < count ? offset + limit : null;
 
     return res.status(200).json({
       message: "Dishes fetched successfully",
-      data: dishes
+      items: rows,
+      total: count,
+      nextOffset
     });
   } catch (error: any) {
     console.error(error);
