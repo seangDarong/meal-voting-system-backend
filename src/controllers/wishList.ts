@@ -193,7 +193,7 @@ export const getAllWishes = async (req: GetAllWishesRequest, res: Response): Pro
     });
 
     const categoryMap = new Map<number, string>();
-    categories.forEach(c => categoryMap.set(c.id as number, c.name));
+    categories.forEach(c => categoryMap.set(c.id as number, c.name!));
 
     const dishes = rows.map(dish => {
       const dishId = dish.get('id') as number;
