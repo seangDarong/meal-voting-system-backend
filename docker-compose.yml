@@ -25,6 +25,7 @@ services:
     restart: always
     environment:
       - POSTGRES_PROD_PORT=5432
+      - TZ=Asia/Phnom_Penh
     depends_on:
       baycanteen-db:
         condition: service_healthy
