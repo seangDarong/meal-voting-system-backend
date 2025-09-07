@@ -6,7 +6,7 @@ import { CandidateDishAttributes, CandidateDishCreationAttributes } from '@/mode
 import { VoteAttributes } from '@/models/vote';
 import { DishAttributes } from '@/models/dish';
 
-import { SubmitVoteOptionsRequest, GetTodayVoteResultRequest ,FinalizeVotePollRequest,GetUpCommingMealRequest} from '@/types/requests.js';
+import { SubmitVoteOptionsRequest, GetTodayVoteResultRequest ,FinalizeVotePollRequest,GetUpCommingMealRequest,GetTodayVotePoll} from '@/types/requests.js';
 import { promises } from 'dns';
 
 
@@ -283,7 +283,6 @@ export const getUpCommingMeal = async (req: GetUpCommingMealRequest, res: Respon
     const poll = await VotePoll.findOne({
       where: {
         voteDate: { [Op.gte]: today, [Op.lt]: tomorrow },
-        status: "finalized",
       },
       include: [
         {
@@ -324,3 +323,72 @@ export const getUpCommingMeal = async (req: GetUpCommingMealRequest, res: Respon
     })
   }
 }
+
+export const getTodayVotePoll = async (req: GetTodayVoteResultRequest, res: Response): Promise<Response> => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    // Find today's vote poll
+    const poll = await VotePoll.findOne({
+      where: {
+        voteDate: { [Op.gte]: today, [Op.lt]: tomorrow },
+        status: { [Op.in]: ["open", "close"] },
+      },
+      include: [
+        {
+          model: CandidateDish,
+          include: [
+            {
+              model: Dish,
+              attributes: { exclude: ["createdAt", "updatedAt"] },
+            },
+          ],
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+      ],
+      attributes: { exclude: ["createdAt", "updatedAt"] },
+    });
+
+
+
+    if (!poll) {
+      return res.status(404).json({ message: "No poll for today." });
+    }
+
+
+    const plainPoll = poll.get({ plain: true }) as any;
+
+    console.log(plainPoll);
+
+    // Count the number of votes for each dish
+    const dishesWithVotes: DishVoteResult[] = await Promise.all(
+      (plainPoll.CandidateDishes ?? []).map(async (cd: any) => {
+        const voteCount = await Vote.count({
+          where: { dishId: cd.dishId, votePollId: cd.votePollId },
+        });
+
+        return {
+          candidateDishId: cd.id,
+          dishId: cd.dishId,
+          dish: cd.Dish?.name ?? "Unknown",
+          voteCount,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      votePollId: plainPoll.id,
+      mealDate: plainPoll.mealDate,
+      voteDate: plainPoll.voteDate,
+      status: plainPoll.status,
+      dishes: dishesWithVotes,
+    });
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal server error cannot get votePoll." });
+  }
+};

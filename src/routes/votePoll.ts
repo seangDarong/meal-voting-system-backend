@@ -1,9 +1,9 @@
 import express from 'express';
-import {submitVoteOptions , finalizeVotePoll } from '@/controllers/votePoll';
+import {submitVoteOptions , finalizeVotePoll, getTodayVotePoll } from '@/controllers/votePoll';
 import { authenticateToken } from '@/middlewares/auth';
 import { authorizeRole } from '@/middlewares/authorizeRole';
 
-import { SubmitVoteOptionsRequest, GetActiveVotePollRequest , FinalizeVotePollRequest } from '@/types/requests';
+import { SubmitVoteOptionsRequest, GetActiveVotePollRequest , FinalizeVotePollRequest, GetTodayVotePoll } from '@/types/requests';
 
 const votePollRouter = express.Router();
 
@@ -102,6 +102,71 @@ votePollRouter.post('/',authenticateToken,authorizeRole('staff'),(req, res, next
 votePollRouter.post('/:id/finalize',authenticateToken,authorizeRole('staff'),(req,res,next) => {
     finalizeVotePoll(req as FinalizeVotePollRequest, res).catch(next);
 });
+
+
+/**
+ * @swagger
+ * /api/polls/today:
+ *   get:
+ *     summary: Get today's vote poll and its results (staff only)
+ *     tags: [VotePoll]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Today's vote poll with candidate dishes and their vote counts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 votePollId:
+ *                   type: integer
+ *                   example: 12
+ *                 mealDate:
+ *                   type: string
+ *                   format: date
+ *                   example: "2025-09-07"
+ *                 voteDate:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2025-09-07T00:00:00.000Z"
+ *                 status:
+ *                   type: string
+ *                   enum: [pending, open, close, finalize]
+ *                   example: "open"
+ *                 dishes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       candidateDishId:
+ *                         type: integer
+ *                         example: 34
+ *                       dishId:
+ *                         type: integer
+ *                         example: 5
+ *                       dish:
+ *                         type: string
+ *                         example: "Samlor Machu Kroeung"
+ *                       voteCount:
+ *                         type: integer
+ *                         example: 18
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Staff role required
+ *       404:
+ *         description: No poll for today
+ *       500:
+ *         description: Internal server error cannot get vote result
+ */
+
+
+votePollRouter.get('/today',authenticateToken,authorizeRole('staff'),(req,res,next) => {
+    getTodayVotePoll(req as GetTodayVotePoll, res).catch(next);
+});
+
 
 
 

@@ -19,7 +19,7 @@ const dishRouter = express.Router();
  * @swagger
  * /api/dishes:
  *   post:
- *     summary: Add a new dish 
+ *     summary: Add a new dish (staff only)
  *     tags: [Dishes]
  *     security:
  *       - bearerAuth: []

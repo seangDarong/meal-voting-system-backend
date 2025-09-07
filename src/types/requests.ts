@@ -198,3 +198,8 @@ export interface GetUserVoteHistoryRequest extends AuthenticatedRequest {
     date?: string;
   }
 }
+
+//get vote history
+export interface GetTodayVotePoll extends AuthenticatedRequest {
+
+}
