@@ -16,7 +16,7 @@ const categoryRouter = express.Router();
  * @swagger
  * /api/categories:
  *   get:
- *     summary: Get all categories (Staff only)
+ *     summary: Get all categories 
  *     tags: [Categories]
  *     security:
  *       - bearerAuth: []
