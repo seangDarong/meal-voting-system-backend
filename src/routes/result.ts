@@ -1,7 +1,7 @@
 import express from 'express';
 import {getTodayVoteResult,getUpCommingMeal} from '@/controllers/votePoll';
 
-import { GetTodayVoteResultRequest, GetUpCommingMealRequest } from '@/types/requests';
+import { GetTodayVoteResultRequest, GetUpComingMealRequest } from '@/types/requests';
 
 const resultRouter = express.Router();
 
@@ -78,7 +78,7 @@ resultRouter.get('/today',(req, res, next) => {
 
 /**
  * @swagger
- * /api/results/upcomming:
+ * /api/results/upcoming:
  *   get:
  *     summary: Get upcoming finalized meal (selected dishes)
  *     tags: [Result]
@@ -143,8 +143,8 @@ resultRouter.get('/today',(req, res, next) => {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-resultRouter.get('/upcomming',(req, res, next) => {
-    getUpCommingMeal(req as GetUpCommingMealRequest, res).catch(next);
+resultRouter.get('/upcoming',(req, res, next) => {
+    getUpCommingMeal(req as GetUpComingMealRequest, res).catch(next);
 })
 
 export default resultRouter;

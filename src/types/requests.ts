@@ -61,7 +61,7 @@ export interface GetTodayVoteResultRequest extends AuthenticatedRequest {
   
 }
 
-export interface GetUpCommingMealRequest extends AuthenticatedRequest {
+export interface GetUpComingMealRequest extends AuthenticatedRequest {
   
 }
 

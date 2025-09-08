@@ -6,7 +6,7 @@ import { CandidateDishAttributes, CandidateDishCreationAttributes } from '@/mode
 import { VoteAttributes } from '@/models/vote';
 import { DishAttributes } from '@/models/dish';
 
-import { SubmitVoteOptionsRequest, GetTodayVoteResultRequest ,FinalizeVotePollRequest,GetUpCommingMealRequest,GetTodayVotePoll} from '@/types/requests.js';
+import { SubmitVoteOptionsRequest, GetTodayVoteResultRequest ,FinalizeVotePollRequest,GetUpComingMealRequest,GetTodayVotePoll} from '@/types/requests.js';
 import { promises } from 'dns';
 
 const VotePoll = db.VotePoll;
@@ -270,7 +270,7 @@ export const finalizeVotePoll = async (req: FinalizeVotePollRequest, res: Respon
 };
 
 
-export const getUpCommingMeal = async (req: GetUpCommingMealRequest, res: Response) => {
+export const getUpCommingMeal = async (req: GetUpComingMealRequest, res: Response) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
