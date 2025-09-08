@@ -103,7 +103,6 @@ app.use('/api/results',resultRoutes);
 
 app.use('/api/votes', voteRoutes);
 
-
 app.get('/', (req, res) => {
     res.send('Meal Voting API');
 });
