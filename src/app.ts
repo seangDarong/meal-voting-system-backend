@@ -25,21 +25,13 @@ import googleRoutes from '@/routes/google';
 
 import voteRoutes from '@/routes/vote';
 
-
 import feedbackRoutes from '@/routes/feedback';
 import systemFeedbackRoutes from '@/routes/systemFeedback';
 
-
-
 dotenv.config();
-
-
 
 const app = express();
 app.use(cookieParser());
-
- 
-
 
 app.use(session({ 
     secret: process.env.SESSION_SECRET || "SECRET", 
@@ -49,7 +41,6 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
-
 
 if (process.env.MS_CLIENT_ID && process.env.MS_CLIENT_SECRET) {
     passport.use(new MicrosoftStrategy({
