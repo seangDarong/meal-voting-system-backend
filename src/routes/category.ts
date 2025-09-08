@@ -48,6 +48,6 @@ const categoryRouter = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-categoryRouter.get('/',authenticateToken,authorizeRole('staff'),getAllCategory);
+categoryRouter.get('/',getAllCategory);
 
 export default categoryRouter;
