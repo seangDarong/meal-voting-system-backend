@@ -38,52 +38,9 @@ services:
     env_file:
       - .env
 
-  git-poller:
-    image: docker:git
-    container_name: baycanteen-git-poller
-    volumes:
-      - .:/app
-      - /var/run/docker.sock:/var/run/docker.sock
-    working_dir: /app
-    environment:
-      - POLL_INTERVAL=30
-      - BRANCH=docker
-      - TZ=Asia/Phnom_Penh 
-      - NETWORK_NAME=baycanteen-network
-    command: >
-      sh -c "
-      git config --global --add safe.directory /app &&
-      while true; do
-        echo \"Checking for updates at \$(date '+%Y-%m-%d %H:%M:%S')...\"
-        git fetch origin
-        if [ $(git rev-parse HEAD) != $(git rev-parse origin/$$BRANCH) ]; then
-          echo 'Changes detected! Pulling and redeploying...'
-          git pull origin $$BRANCH
-
-          docker compose build backend-baycanteen
-
-          docker stop backend-baycanteen || true
-          docker rm backend-baycanteen || true
-        
-          docker run -d --name backend-baycanteen --network $$NETWORK_NAME -p 40000:3000 --env-file .env -e POSTGRES_PROD_PORT=5432 -e TZ=Asia/Phnom_Penh --restart always
-        
-          echo \"Backend deployment completed at \$(date '+%Y-%m-%d %H:%M:%S')\"
-        else
-          echo 'No changes found'
-        fi
-        sleep $$POLL_INTERVAL
-      done
-      "
-    restart: unless-stopped
-    networks:
-      - baycanteen-network
-    depends_on:
-      - backend-baycanteen
-
 volumes:
   app-volume:
 
 networks:
   baycanteen-network:
     driver: bridge
-  
