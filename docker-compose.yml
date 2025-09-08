@@ -49,13 +49,20 @@ services:
       apk add --no-cache git &&
       git config --global --add safe.directory /app &&
       while true; do
-        echo 'Checking for updates at $(date)...'
+        echo \"Checking for updates at \$(date '+%Y-%m-%d %H:%M:%S')...\"
         git fetch origin
         if [ $(git rev-parse HEAD) != $(git rev-parse origin/$$BRANCH) ]; then
           echo 'Changes detected! Pulling and redeploying...'
           git pull origin $$BRANCH
-          docker compose up --build -d --no-deps backend-baycanteen
-          echo 'Deployment completed at $(date)'
+
+          docker compose build backend-baycanteen
+
+          docker stop backend-baycanteen || true
+          docker rm backend-baycanteen || true
+        
+          docker compose up -d --no-deps backend-baycanteen
+
+          echo \"Backend deployment completed at \$(date '+%Y-%m-%d %H:%M:%S')\"
         else
           echo 'No changes found'
         fi
