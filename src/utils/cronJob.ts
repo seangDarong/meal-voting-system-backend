@@ -53,18 +53,18 @@ cron.schedule(
 async () => {
     // For testing, runs every minute
     try {
-    console.log("Cron: Closing today's poll");
+        console.log("Cron: Closing today's poll");
 
-    const { start, end } = getTodayRange();
-    console.log("Today's range:", start, end);
+        const { start, end } = getTodayRange();
+        console.log("Today's range:", start, end);
 
-    const poll = await votePoll.findOne({
-        where: {
-        voteDate: {
-            [Op.gte]: start,
-            [Op.lt]: end,
-        },
-        status: "open",
+        const poll = await votePoll.findOne({
+            where: {
+            voteDate: {
+                [Op.gte]: start,
+                [Op.lt]: end,
+            },
+            status: "open",
         },
     });
 
