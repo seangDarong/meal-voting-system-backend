@@ -348,7 +348,6 @@ router.delete('/feedback/:id', authenticateToken, authorizeRole('admin') ,(req, 
     deleteFeedback(req as DeleteFeedbackRequest, res).catch(next);
 });
 
-
 /**
  * @swagger
  * /api/admin/system-feedback/{id}:
