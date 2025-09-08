@@ -42,7 +42,7 @@ services:
     working_dir: /app
     environment:
       - POLL_INTERVAL=30
-      - BRANCH=main
+      - BRANCH=docker
       - COMPOSE_PROJECT_NAME=baycanteen
     command: sh /git-poller.sh
     restart: unless-stopped

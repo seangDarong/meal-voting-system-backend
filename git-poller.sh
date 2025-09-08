@@ -1,6 +1,6 @@
 #!/bin/sh
 POLL_INTERVAL=${POLL_INTERVAL:-30}
-BRANCH=${BRANCH:-docker}
+BRANCH=${BRANCH:-main}
 COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-baycanteen}
 
 echo "Starting Git poller for Bay Canteen..."
