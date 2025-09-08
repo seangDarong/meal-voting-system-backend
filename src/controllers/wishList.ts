@@ -74,7 +74,6 @@ export const getMyWish = async (req: GetMyWishRequest, res: Response): Promise<R
       updatedAt: wish.updatedAt!
     };
 
-
     return res.json(wish);
   } catch (err: any) {
     console.error('Error details:', err);
