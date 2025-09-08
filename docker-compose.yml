@@ -86,3 +86,4 @@ volumes:
 networks:
   baycanteen-network:
     driver: bridge
+  
