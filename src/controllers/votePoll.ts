@@ -9,7 +9,6 @@ import { DishAttributes } from '@/models/dish';
 import { SubmitVoteOptionsRequest, GetTodayVoteResultRequest ,FinalizeVotePollRequest,GetUpCommingMealRequest,GetTodayVotePoll} from '@/types/requests.js';
 import { promises } from 'dns';
 
-
 const VotePoll = db.VotePoll;
 const CandidateDish = db.CandidateDish;
 const Dish = db.Dish; 
