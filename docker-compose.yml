@@ -32,24 +32,24 @@ services:
     env_file:
       - .env
 
-    git-poller:
-      image: alpine/git
-      container_name: baycanteen-git-poller
-      volumes:
-        - .:/app
-        - /var/run/docker.sock:/var/run/docker.sock
-        - ./git-poller.sh:/git-poller.sh
-      working_dir: /app
-      environment:
-        - POLL_INTERVAL=30
-        - BRANCH=main
-        - COMPOSE_PROJECT_NAME=baycanteen
-      command: sh /git-poller.sh
-      restart: unless-stopped
-      networks:
-        - baycanteen-network
-      depends_on:
-        - backend-baycanteen
+  git-poller:
+    image: alpine/git
+    container_name: baycanteen-git-poller
+    volumes:
+      - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./git-poller.sh:/git-poller.sh
+    working_dir: /app
+    environment:
+      - POLL_INTERVAL=30
+      - BRANCH=main
+      - COMPOSE_PROJECT_NAME=baycanteen
+    command: sh /git-poller.sh
+    restart: unless-stopped
+    networks:
+      - baycanteen-network
+    depends_on:
+      - backend-baycanteen
 
 volumes:
   app-volume:
