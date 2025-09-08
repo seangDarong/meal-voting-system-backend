@@ -39,7 +39,7 @@ services:
       - .env
 
   git-poller:
-    image: docker:latest
+    image: docker:git
     container_name: baycanteen-git-poller
     volumes:
       - .:/app
@@ -51,7 +51,6 @@ services:
       - TZ=Asia/Phnom_Penh 
     command: >
       sh -c "
-      apk add --no-cache git &&
       git config --global --add safe.directory /app &&
       while true; do
         echo \"Checking for updates at \$(date '+%Y-%m-%d %H:%M:%S')...\"
