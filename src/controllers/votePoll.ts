@@ -271,22 +271,17 @@ export const finalizeVotePoll = async (req: FinalizeVotePollRequest, res: Respon
 
 
 export const getUpCommingMeal = async (req: GetUpCommingMealRequest, res: Response) => {
-  try{
+  try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    // Find today's vote poll
+    // Find the most recent finalized poll (today or earlier), but still relevant
     const poll = await VotePoll.findOne({
-      where: {
-        voteDate: { [Op.gte]: today, [Op.lt]: tomorrow },
-      },
+      where: { status: "finalized" },
       include: [
         {
           model: CandidateDish,
-          where: {isSelected : true} ,
+          where: { isSelected: true },
           include: [
             {
               model: Dish,
@@ -296,32 +291,30 @@ export const getUpCommingMeal = async (req: GetUpCommingMealRequest, res: Respon
           attributes: { exclude: ["createdAt", "updatedAt"] },
         },
       ],
+      order: [["mealDate", "DESC"]], // latest finalized meal
       attributes: { exclude: ["createdAt", "updatedAt"] },
     });
 
-
-
     if (!poll) {
-      return res.status(404).json({ message: "No poll for today." });
+      return res.status(404).json({ message: "No upcoming meal available." });
     }
 
     const plainPoll = poll.get({ plain: true }) as any;
 
     return res.status(200).json({
-    votePollId: plainPoll.id,
-    mealDate: plainPoll.mealDate,
-    voteDate: plainPoll.voteDate,
-    status: plainPoll.status,
-    dish : plainPoll.CandidateDishes
-  });
-
-  }catch(error){
+      votePollId: plainPoll.id,
+      mealDate: plainPoll.mealDate,
+      voteDate: plainPoll.voteDate,
+      status: plainPoll.status,
+      dish: plainPoll.CandidateDishes,
+    });
+  } catch (error) {
     console.error(error);
     return res.status(500).json({
-      message : "Internal server error cannot get up comming meal"
-    })
+      message: "Internal server error cannot get upcoming meal",
+    });
   }
-}
+};
 
 export const getTodayVotePoll = async (req: GetTodayVoteResultRequest, res: Response): Promise<Response> => {
   try {
