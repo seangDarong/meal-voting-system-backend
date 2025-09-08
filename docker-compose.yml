@@ -65,7 +65,7 @@ services:
           docker stop backend-baycanteen || true
           docker rm backend-baycanteen || true
         
-          docker run -d --name backend-baycanteen --network $$NETWORK_NAME -p 40000:3000 --env-file .env -e POSTGRES_PROD_PORT=5432 -e TZ=Asia/Phnom_Penh --restart always backend-baycanteen
+          docker run -d --name backend-baycanteen --network $$NETWORK_NAME -p 40000:3000 --env-file .env -e POSTGRES_PROD_PORT=5432 -e TZ=Asia/Phnom_Penh --restart always
         
           echo \"Backend deployment completed at \$(date '+%Y-%m-%d %H:%M:%S')\"
         else
