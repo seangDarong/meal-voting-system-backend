@@ -70,15 +70,8 @@ services:
       done
       "
     restart: unless-stopped
-    networks:
-      - baycanteen-network
     depends_on:
       - backend-baycanteen
 
 volumes:
   app-volume:
-
-
-networks:
-  baycanteen-network:
-    driver: bridge
