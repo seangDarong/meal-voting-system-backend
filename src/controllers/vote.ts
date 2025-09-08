@@ -8,12 +8,12 @@ const CandidateDish = db.CandidateDish;
 const Dish = db.Dish; 
 const Vote = db.Vote;
 
-    interface DishVoteResult {
+interface DishVoteResult {
     candidateDishId: number;
     dishId: number;
     dish: string;
     voteCount: number;
-    }
+}
 
 
 export const castVote = async (req: CastVoteRequest, res: Response) => {
