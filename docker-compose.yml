@@ -54,8 +54,7 @@ services:
         if [ $(git rev-parse HEAD) != $(git rev-parse origin/$$BRANCH) ]; then
           echo 'Changes detected! Pulling and redeploying...'
           git pull origin $$BRANCH
-          docker compose --build backend-baycanteen
-          docker compose up -d backend-baycanteen
+          docker compose up -d
           echo 'Deployment completed at $(date)'
         else
           echo 'No changes found'
