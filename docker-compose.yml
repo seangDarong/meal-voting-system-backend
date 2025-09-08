@@ -35,7 +35,7 @@ services:
       - .env
 
   git-poller:
-    image: alpine:latest
+    image: docker:latest
     container_name: baycanteen-git-poller
     volumes:
       - .:/app
