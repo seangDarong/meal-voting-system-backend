@@ -200,6 +200,26 @@ export interface GetUserVoteHistoryRequest extends AuthenticatedRequest {
 }
 
 //get vote history
-export interface GetTodayVotePoll extends AuthenticatedRequest {
+export interface GetTodayVotePollRequest extends AuthenticatedRequest {
+
+}
+
+export interface EditVotePollRequest extends AuthenticatedRequest {
+
+  params : {
+    id: string;
+  }
+  body :{
+    dishId? : number[];
+  }
+}
+
+export interface DeleteVotePollRequest extends AuthenticatedRequest {
+  params: {
+    id : string;
+  }
+}
+
+export interface GetActiveVotePollRequest extends AuthenticatedRequest {
 
 }
