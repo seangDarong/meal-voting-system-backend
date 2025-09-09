@@ -43,7 +43,18 @@ const votePollRouter = express.Router();
  *                 description: Array of dish IDs to include in the vote
  *     responses:
  *       201:
- *         description: Vote options submitted successfully
+ *         description: Vote poll created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Vote poll created successfully"
+ *                 pollId:
+ *                   type: integer
+ *                   example: 10
  *       400:
  *         description: Validation error
  *       401:
@@ -53,6 +64,7 @@ const votePollRouter = express.Router();
  *       409:
  *         description: Poll already exists for this mealDate
  */
+
 votePollRouter.post('/',authenticateToken,authorizeRole('staff'),(req, res, next) => {
     submitVoteOptions(req as SubmitVoteOptionsRequest, res).catch(next);
 });
@@ -85,12 +97,26 @@ votePollRouter.post('/',authenticateToken,authorizeRole('staff'),(req, res, next
  *                 type: array
  *                 items:
  *                   type: integer
- *                 description: Dish IDs that were finalized
  *     responses:
  *       200:
  *         description: Poll finalized successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Poll finalized successfully."
+ *                 pollId:
+ *                   type: integer
+ *                   example: 7
+ *                 finalizedDishes:
+ *                   type: array
+ *                   items:
+ *                     type: integer
  *       400:
- *         description: Invalid request (e.g., poll not closed, invalid dishes)
+ *         description: Invalid request (poll not closed, invalid dishes)
  *       401:
  *         description: Unauthorized
  *       403:
@@ -108,7 +134,7 @@ votePollRouter.post('/:id/finalize',authenticateToken,authorizeRole('staff'),(re
  * @swagger
  * /api/polls/today:
  *   get:
- *     summary: Get today's vote poll and its results (staff only)
+ *     summary: Get today's vote poll and its results (Staff only)
  *     tags: [VotePoll]
  *     security:
  *       - bearerAuth: []
@@ -122,36 +148,36 @@ votePollRouter.post('/:id/finalize',authenticateToken,authorizeRole('staff'),(re
  *               properties:
  *                 votePollId:
  *                   type: integer
- *                   example: 12
  *                 mealDate:
  *                   type: string
  *                   format: date
- *                   example: "2025-09-07"
  *                 voteDate:
  *                   type: string
  *                   format: date-time
- *                   example: "2025-09-07T00:00:00.000Z"
  *                 status:
  *                   type: string
- *                   enum: [pending, open, close, finalize]
- *                   example: "open"
+ *                   enum: [pending, open, close, finalized]
  *                 dishes:
  *                   type: array
  *                   items:
  *                     type: object
  *                     properties:
- *                       candidateDishId:
- *                         type: integer
- *                         example: 34
  *                       dishId:
  *                         type: integer
- *                         example: 5
- *                       dish:
+ *                       name:
  *                         type: string
- *                         example: "Samlor Machu Kroeung"
+ *                       name_kh:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       description_kh:
+ *                         type: string
+ *                       imageURL:
+ *                         type: string
+ *                       categoryId:
+ *                         type: integer
  *                       voteCount:
  *                         type: integer
- *                         example: 18
  *       401:
  *         description: Unauthorized
  *       403:
@@ -159,9 +185,8 @@ votePollRouter.post('/:id/finalize',authenticateToken,authorizeRole('staff'),(re
  *       404:
  *         description: No poll for today
  *       500:
- *         description: Internal server error cannot get vote result
+ *         description: Internal server error
  */
-
 
 votePollRouter.get('/today',authenticateToken,authorizeRole('staff'),(req,res,next) => {
     getTodayVotePoll(req as GetTodayVotePollRequest, res).catch(next);
@@ -195,42 +220,21 @@ votePollRouter.get('/today',authenticateToken,authorizeRole('staff'),(req,res,ne
  *                 type: array
  *                 items:
  *                   type: integer
- *                 description: Array of dish IDs for the updated poll. Dishes not in the list will be removed, new ones added.
  *     responses:
  *       200:
  *         description: Vote poll updated successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Vote poll updated successfully."
- *                 pollId:
- *                   type: integer
- *                   example: 42
- *                 addedDishes:
- *                   type: array
- *                   items:
- *                     type: integer
- *                   example: [5]
- *                 removedDishes:
- *                   type: array
- *                   items:
- *                     type: integer
- *                   example: [2]
  *       400:
- *         description: Validation error (e.g., dishIds empty or invalid)
+ *         description: Validation error
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden - Staff role required
  *       404:
- *         description: Vote poll not found
+ *         description: Poll not found
  *       500:
  *         description: Internal server error
  */
+
 votePollRouter.patch('/:id',authenticateToken,authorizeRole('staff'),(req,res,next) => {
     editVotePoll(req as EditVotePollRequest, res).catch(next);
 });
@@ -238,7 +242,7 @@ votePollRouter.patch('/:id',authenticateToken,authorizeRole('staff'),(req,res,ne
  * @swagger
  * /api/polls/active:
  *   get:
- *     summary: Get all active vote polls (pending, open, close) sorted by mealDate descending
+ *     summary: Get all active vote polls (pending, open, close)
  *     tags: [VotePoll]
  *     security:
  *       - bearerAuth: []
@@ -254,45 +258,46 @@ votePollRouter.patch('/:id',authenticateToken,authorizeRole('staff'),(req,res,ne
  *                 properties:
  *                   votePollId:
  *                     type: integer
- *                     example: 12
  *                   mealDate:
  *                     type: string
  *                     format: date
- *                     example: "2025-09-10"
  *                   voteDate:
  *                     type: string
  *                     format: date-time
- *                     example: "2025-09-09T00:00:00.000Z"
  *                   status:
  *                     type: string
  *                     enum: [pending, open, close]
- *                     example: "open"
  *                   dishes:
  *                     type: array
  *                     items:
  *                       type: object
  *                       properties:
- *                         candidateDishId:
- *                           type: integer
- *                           example: 34
  *                         dishId:
  *                           type: integer
- *                           example: 5
- *                         dish:
+ *                         name:
  *                           type: string
- *                           example: "Samlor Machu Kroeung"
+ *                         name_kh:
+ *                           type: string
+ *                         description:
+ *                           type: string
+ *                         description_kh:
+ *                           type: string
+ *                         imageURL:
+ *                           type: string
+ *                         categoryId:
+ *                           type: integer
  *                         voteCount:
  *                           type: integer
- *                           example: 18
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden - Staff role required
+ *         description: Forbidden
  *       404:
- *         description: No active vote polls found
+ *         description: No active polls found
  *       500:
  *         description: Internal server error
  */
+
 votePollRouter.get('/active',authenticateToken,authorizeRole('staff'),(req,res,next) => {
     getAllActiveVotePolls(req as GetActiveVotePollRequest, res).catch(next);
 });
@@ -311,55 +316,19 @@ votePollRouter.get('/active',authenticateToken,authorizeRole('staff'),(req,res,n
  *         required: true
  *         schema:
  *           type: integer
- *         description: The ID of the vote poll to delete
  *     responses:
  *       200:
  *         description: Vote poll deleted successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Vote poll deleted successfully"
- *                 pollId:
- *                   type: integer
- *                   example: 12
  *       400:
- *         description: Invalid poll ID or cannot delete non-pending poll
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Only pending polls can be deleted"
+ *         description: Invalid request
  *       401:
  *         description: Unauthorized
  *       403:
  *         description: Forbidden - Staff role required
  *       404:
- *         description: Vote poll not found
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Vote poll not found"
+ *         description: Poll not found
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: "Internal server error"
  */
 votePollRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req,res,next) => {
     deleteVotePoll(req as DeleteVotePollRequest, res).catch(next);

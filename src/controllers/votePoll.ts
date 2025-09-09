@@ -510,9 +510,13 @@ export const getAllActiveVotePolls = async (req: GetActiveVotePollRequest, res: 
             });
 
             return {
-              candidateDishId: cd.id,
               dishId: cd.dishId,
-              dish: cd.Dish?.name ?? 'Unknown',
+              name: cd.Dish?.name ?? "Unknown",
+              name_kh: cd.Dish.name_kh,
+              description: cd.Dish.description,
+              description_kh: cd.Dish.description_kh,
+              imageURL : cd.Dish.imageURL,
+              categoryId : cd.Dish.categoryId,
               voteCount,
             };
           })

@@ -45,32 +45,35 @@ const resultRouter = express.Router();
  *                   items:
  *                     type: object
  *                     properties:
- *                       candidateDishId:
- *                         type: integer
- *                         example: 45
  *                       dishId:
  *                         type: integer
  *                         example: 7
- *                       dish:
+ *                       name:
  *                         type: string
  *                         example: "Spaghetti Bolognese"
+ *                       name_kh:
+ *                         type: string
+ *                         example: "ស្ពាបូឡូញ"
+ *                       description:
+ *                         type: string
+ *                         example: "Classic pasta with meat sauce"
+ *                       description_kh:
+ *                         type: string
+ *                         example: "មីប៉ាស្តាដោយស៊ុបសាច់គោ"
+ *                       imageURL:
+ *                         type: string
+ *                         example: "https://example.com/image.jpg"
+ *                       categoryId:
+ *                         type: integer
+ *                         example: 3
  *                       voteCount:
  *                         type: integer
  *                         example: 23
  *       404:
  *         description: No poll found for today
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
-
 
 resultRouter.get('/today',(req, res, next) => {
     getTodayVoteResult(req as GetTodayVoteResultRequest, res).catch(next);
@@ -103,7 +106,7 @@ resultRouter.get('/today',(req, res, next) => {
  *                   example: "2025-09-03"
  *                 status:
  *                   type: string
- *                   example: "finalize"
+ *                   example: "finalized"
  *                 dish:
  *                   type: array
  *                   items:
@@ -130,18 +133,25 @@ resultRouter.get('/today',(req, res, next) => {
  *                           name:
  *                             type: string
  *                             example: "Chicken Curry"
+ *                           name_kh:
+ *                             type: string
+ *                             example: "ខឆ្មា"
+ *                           description:
+ *                             type: string
+ *                             example: "A rich curry dish"
+ *                           description_kh:
+ *                             type: string
+ *                             example: "ម្ហូបខែជ្រក់"
+ *                           imageURL:
+ *                             type: string
+ *                             example: "https://example.com/chicken.jpg"
+ *                           categoryId:
+ *                             type: integer
+ *                             example: 2
  *       404:
- *         description: No finalized poll found for today
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         description: No upcoming meal available
  *       500:
  *         description: Internal server error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 resultRouter.get('/upcoming',(req, res, next) => {
     getUpCommingMeal(req as GetUpComingMealRequest, res).catch(next);
