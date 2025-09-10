@@ -1,5 +1,5 @@
 import express from 'express';
-import {addDish, updateDish, getAllDishes, deleteDish, getAllDishesByCategory, getDishById} from '@/controllers/dish';
+import {addDish, updateDish, getAllDishes, deleteDish, getAllDishesByCategory, getDishById, getMostFavoritedDishes, getMostRatedDishes} from '@/controllers/dish';
 import { authenticateToken } from '@/middlewares/auth';
 import {upload} from '@/middlewares/upload';
 import { authorizeRole } from '@/middlewares/authorizeRole';
@@ -357,6 +357,104 @@ dishRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req, res, nex
  */
 
 dishRouter.get('/category/:categoryId',getAllDishesByCategory);
+
+/**
+ * @swagger
+ * /api/dishes/most-rated:
+ *   get:
+ *     summary: Get dishes sorted by most ratings
+ *     tags: [Dishes]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 50
+ *         description: Number of dishes to return (max 50)
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of items to skip
+ *     responses:
+ *       200:
+ *         description: List of most rated dishes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Dish'
+ *                 total:
+ *                   type: integer
+ *                 nextOffset:
+ *                   type: integer
+ *                   nullable: true
+ *       500:
+ *         description: Internal server error while fetching most rated dishes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+
+dishRouter.get('/most-rated', getMostRatedDishes);
+
+/**
+ * @swagger
+ * /api/dishes/most-favorited:
+ *   get:
+ *     summary: Get dishes sorted by most favorites
+ *     tags: [Dishes]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 50
+ *         description: Number of dishes to return (max 50)
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of items to skip
+ *     responses:
+ *       200:
+ *         description: List of most favorited dishes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Dish'
+ *                 total:
+ *                   type: integer
+ *                 nextOffset:
+ *                   type: integer
+ *                   nullable: true
+ *       500:
+ *         description: Internal server error while fetching most favorited dishes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+
+dishRouter.get('/most-favorited', getMostFavoritedDishes);
 
 /**
  * @swagger
