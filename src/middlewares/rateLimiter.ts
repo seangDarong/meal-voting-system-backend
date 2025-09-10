@@ -12,7 +12,7 @@ export const globalLimiter = rateLimit({
 // Login limiter (example for sensitive routes)
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // only 5 login attempts per window
+    max: 100, // only 100 login attempts per window
     message: { error: "Too many login attempts, please try again later." },
     standardHeaders: true,
     legacyHeaders: false,
