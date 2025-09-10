@@ -27,11 +27,14 @@ import voteRoutes from '@/routes/vote';
 
 import feedbackRoutes from '@/routes/feedback';
 import systemFeedbackRoutes from '@/routes/systemFeedback';
-
+import { globalLimiter } from '@/middlewares/rateLimiter'
+import { authLimiter } from '@/middlewares/rateLimiter';
 dotenv.config();
 
 const app = express();
 app.use(cookieParser());
+
+app.use(globalLimiter);
 
 app.use(session({ 
     secret: process.env.SESSION_SECRET || "SECRET", 
@@ -96,8 +99,8 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/system-feedback', systemFeedbackRoutes);
 
 app.use('/api/user', userRoutes);
-app.use('/auth/microsoft', microsoftRoutes); 
-app.use('/auth/google', googleRoutes)
+app.use('/auth/microsoft', authLimiter,microsoftRoutes); 
+app.use('/auth/google',authLimiter, googleRoutes)
 
 app.use('/api/results',resultRoutes);
 

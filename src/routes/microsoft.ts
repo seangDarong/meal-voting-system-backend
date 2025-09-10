@@ -1,7 +1,6 @@
 import express from 'express';
 import passport from 'passport';
 import { handleMicrosoftCallback } from '@/controllers/user';
-
 const router = express.Router();
 
 router.get('/', passport.authenticate('microsoft'));
