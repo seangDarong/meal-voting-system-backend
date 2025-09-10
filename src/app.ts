@@ -34,7 +34,7 @@ dotenv.config();
 const app = express();
 app.use(cookieParser());
 
-app.use(globalLimiter);
+
 
 app.use(session({ 
     secret: process.env.SESSION_SECRET || "SECRET", 
