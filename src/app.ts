@@ -99,8 +99,8 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/system-feedback', systemFeedbackRoutes);
 
 app.use('/api/user', userRoutes);
-app.use('/auth/microsoft', authLimiter,microsoftRoutes); 
-app.use('/auth/google',authLimiter, googleRoutes)
+app.use('/auth/microsoft',microsoftRoutes); 
+app.use('/auth/google', googleRoutes)
 
 app.use('/api/results',resultRoutes);
 
