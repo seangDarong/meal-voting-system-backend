@@ -4,7 +4,9 @@ import { addStaff,
     deactivateUser,
     reactivateUser,
     getAllUsers,
-    deleteFeedback } from '@/controllers/admin';
+    deleteFeedback,
+    deleteSystemFeedback
+ } from '@/controllers/admin';
 import { authenticateToken } from '@/middlewares/auth';
 import { authorizeRole } from '@/middlewares/authorizeRole';
 
@@ -345,5 +347,99 @@ router.get('/users', authenticateToken, authorizeRole('admin') ,(req, res, next)
 router.delete('/feedback/:id', authenticateToken, authorizeRole('admin') ,(req, res, next) => {
     deleteFeedback(req as DeleteFeedbackRequest, res).catch(next);
 });
+
+/**
+ * @swagger
+ * /api/admin/system-feedback/{id}:
+ *   delete:
+ *     summary: Delete system feedback (admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []   # JWT token required
+ *     description: >
+ *       Allows an **admin** user to delete a feedback entry by ID.  
+ *       Requires authentication and admin privileges.
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the feedback entry to delete
+ *     responses:
+ *       '200':
+ *         description: Feedback deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Feedback deleted successfully.
+ *                 deletedId:
+ *                   type: integer
+ *                   example: 12
+ *       '400':
+ *         description: Missing feedback ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: Feedback ID is required.
+ *       '403':
+ *         description: User is not an admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: Only admin users can delete feedback.
+ *       '404':
+ *         description: Feedback not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: Feedback not found.
+ *       '500':
+ *         description: Server error while deleting feedback
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error. Please try again later.
+ */
+router.delete('/system-feedback/:id', authenticateToken, authorizeRole('admin') ,(req, res, next) => {
+    deleteSystemFeedback(req as DeleteFeedbackRequest, res).catch(next);
+});
+
+
 
 export default router;

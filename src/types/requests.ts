@@ -61,7 +61,7 @@ export interface GetTodayVoteResultRequest extends AuthenticatedRequest {
   
 }
 
-export interface GetUpCommingMealRequest extends AuthenticatedRequest {
+export interface GetUpComingMealRequest extends AuthenticatedRequest {
   
 }
 
@@ -196,5 +196,36 @@ export interface UpdateVoteRequest extends AuthenticatedRequest {
 export interface GetUserVoteHistoryRequest extends AuthenticatedRequest {
   body:{
     date?: string;
+  }
+}
+
+//get vote history
+export interface GetTodayVotePollRequest extends AuthenticatedRequest {
+
+}
+
+export interface EditVotePollRequest extends AuthenticatedRequest {
+
+  params : {
+    id: string;
+  }
+  body :{
+    dishId? : number[];
+  }
+}
+
+export interface DeleteVotePollRequest extends AuthenticatedRequest {
+  params: {
+    id : string;
+  }
+}
+
+export interface GetActiveVotePollRequest extends AuthenticatedRequest {
+
+}
+
+export interface GetPendingVotePollRequest extends AuthenticatedRequest {
+  body:{
+    date : string;
   }
 }

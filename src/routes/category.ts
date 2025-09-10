@@ -16,7 +16,7 @@ const categoryRouter = express.Router();
  * @swagger
  * /api/categories:
  *   get:
- *     summary: Get all categories (Staff only)
+ *     summary: Get all categories 
  *     tags: [Categories]
  *     security:
  *       - bearerAuth: []
@@ -48,6 +48,6 @@ const categoryRouter = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-categoryRouter.get('/',authenticateToken,authorizeRole('staff'),getAllCategory);
+categoryRouter.get('/',getAllCategory);
 
 export default categoryRouter;

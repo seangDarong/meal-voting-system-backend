@@ -25,18 +25,15 @@ import googleRoutes from '@/routes/google';
 
 import voteRoutes from '@/routes/vote';
 
-
 import feedbackRoutes from '@/routes/feedback';
-
-
+import systemFeedbackRoutes from '@/routes/systemFeedback';
+import { globalLimiter } from '@/middlewares/rateLimiter'
+import { authLimiter } from '@/middlewares/rateLimiter';
 dotenv.config();
-
-
 
 const app = express();
 app.use(cookieParser());
 
- 
 
 
 app.use(session({ 
@@ -48,12 +45,11 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-
 if (process.env.MS_CLIENT_ID && process.env.MS_CLIENT_SECRET) {
     passport.use(new MicrosoftStrategy({
       clientID: process.env.MS_CLIENT_ID,
       clientSecret: process.env.MS_CLIENT_SECRET,
-      callbackURL: process.env.MS_CALLBACK_URL || "http://localhost:3000/auth/microsoft/callback",
+      callbackURL: process.env.MS_CALLBACK_URL || "https://baycanteen-api.sliden.pro/auth/microsoft/callback",
       scope: ['user.read'],
       tenant: process.env.MS_TENANT_ID
     }, microsoftAuthStrategy));
@@ -66,7 +62,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback',
+          callbackURL: process.env.GOOGLE_CALLBACK_URL || 'https://baycanteen-api.sliden.pro/auth/google/callback',
         },
         googleAuthStrategy //Fuck this shit
       )
@@ -85,11 +81,9 @@ passport.deserializeUser(async (id:any, done) => {
     }
 });
 
-const frontURL = `${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}`;
+const frontURL = `${process.env.FRONTEND_URL}`;
 console.log('listen from ', frontURL);
-app.use(cors({
-    origin: frontURL,
-}));
+app.use(cors());
 app.use(express.json());
 
 app.use('/docs', serveSwagger, setupSwagger);
@@ -102,15 +96,15 @@ app.use('/api/categories', categoryRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishes', wishesRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/system-feedback', systemFeedbackRoutes);
 
 app.use('/api/user', userRoutes);
-app.use('/auth/microsoft', microsoftRoutes); 
+app.use('/auth/microsoft',microsoftRoutes); 
 app.use('/auth/google', googleRoutes)
 
 app.use('/api/results',resultRoutes);
 
 app.use('/api/votes', voteRoutes);
-
 
 app.get('/', (req, res) => {
     res.send('Meal Voting API');

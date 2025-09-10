@@ -4,7 +4,6 @@ import {
     staffLogin
 } from '@/controllers/user';
 import { authenticateToken } from '@/middlewares/auth';
-
 import { SetupGraduationDateRequest } from '@/types/requests';
 
 const router = express.Router();

@@ -1,5 +1,5 @@
 import express from 'express';
-import {addDish, updateDish, getAllDishes, deleteDish, getAllDishesByCategory} from '@/controllers/dish';
+import {addDish, updateDish, getAllDishes, deleteDish, getAllDishesByCategory, getDishById} from '@/controllers/dish';
 import { authenticateToken } from '@/middlewares/auth';
 import {upload} from '@/middlewares/upload';
 import { authorizeRole } from '@/middlewares/authorizeRole';
@@ -19,7 +19,7 @@ const dishRouter = express.Router();
  * @swagger
  * /api/dishes:
  *   post:
- *     summary: Add a new dish 
+ *     summary: Add a new dish (staff only)
  *     tags: [Dishes]
  *     security:
  *       - bearerAuth: []
@@ -95,7 +95,7 @@ const dishRouter = express.Router();
  *               $ref: '#/components/schemas/Error'
  *
  *   get:
- *     summary: Get all dishes with pagination (Staff only)
+ *     summary: Get all dishes with pagination
  *     tags: [Dishes]
  *     security:
  *       - bearerAuth: []
@@ -290,7 +290,7 @@ dishRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req, res, nex
  * @swagger
  * /api/dishes/category/{categoryId}:
  *   get:
- *     summary: Get all dishes by category (Staff only)
+ *     summary: Get all dishes by category 
  *     tags: [Dishes]
  *     security:
  *       - bearerAuth: []
@@ -335,6 +335,83 @@ dishRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req, res, nex
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-dishRouter.get('/category/:categoryId',authenticateToken,authorizeRole('staff'),getAllDishesByCategory);
+dishRouter.get('/category/:categoryId',getAllDishesByCategory);
+
+/**
+ * @swagger
+ * /api/dishes/{id}:
+ *   get:
+ *     summary: Get a dish by ID
+ *     tags: [Dishes]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Numeric ID of the dish to retrieve
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the dish
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 dish:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     name:
+ *                       type: string
+ *                     name_kh:
+ *                       type: string
+ *                     imageURL:
+ *                       type: string
+ *                     ingredient:
+ *                       type: string
+ *                     ingredient_kh:
+ *                       type: string
+ *                     description:
+ *                       type: string
+ *                     description_kh:
+ *                       type: string
+ *                     categoryId:
+ *                       type: integer
+ *       400:
+ *         description: Invalid dish ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid dish ID
+ *       404:
+ *         description: Dish not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Dish not found
+ *       500:
+ *         description: Internal server error while fetching dish
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error while fetching dish
+ */
+dishRouter.get('/:id',(req, res, next) => {
+    getDishById(req, res).catch(next);
+});
 
 export default dishRouter;

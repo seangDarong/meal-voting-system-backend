@@ -4,11 +4,8 @@ import sequelize from '@/config/db';
 // Define interface for Feedback attributes
 interface FeedbackAttributes {
   id?: number;
-  canteen: number | null;
   food: number | null;
-  system: number | null;
   content: string | null;
-  userId?: string;
   dishId?: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -20,11 +17,8 @@ interface FeedbackCreationAttributes extends Optional<FeedbackAttributes, 'id' |
 // Define Feedback model class
 class Feedback extends Model<FeedbackAttributes, FeedbackCreationAttributes> implements FeedbackAttributes {
   public id!: number;
-  public canteen!: number | null;
   public food!: number | null;
-  public system!: number | null;
   public content!: string | null;
-  public userId!: string | undefined;
   public dishId!: number | undefined;
   
   // Timestamps
@@ -39,25 +33,17 @@ Feedback.init(
       primaryKey: true,
       autoIncrement: true,
     },
-    canteen: {
-      type: DataTypes.INTEGER,
-      allowNull: true
-    },
     food: {
       type: DataTypes.INTEGER,
       allowNull: true
     },
-    system: {
-      type: DataTypes.INTEGER,
-      allowNull: true
-    },
     content: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    userId: {
-      type: DataTypes.UUID,
-      allowNull: true
+      type: DataTypes.STRING(250),
+      allowNull: true,
+      validate: {
+        len: [0, 250]
+      }
+
     },
   }, 
   {

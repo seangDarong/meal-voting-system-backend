@@ -7,7 +7,7 @@ import db from '@/models/index';
 import WishList from '@/models/wishList';
 import { UserAttributes, UserCreationAttributes } from '@/models/user';
 
-import { StaffLoginRequest, DeactivateOwnAccountRequest, GetOwnProfileRequest, SetupGraduationDateRequest } from '@/types/requests';
+import { StaffLoginRequest, GetOwnProfileRequest, SetupGraduationDateRequest } from '@/types/requests';
 import { GoogleCallbackParameters } from 'passport-google-oauth20';
 
 const User = db.User;
@@ -118,78 +118,78 @@ export const signOut = (req: Request, res: Response): Response => {
   return res.json({ message: 'Sign out successful' });
 };
 
-export const deactivateOwnAccount = async (req: DeactivateOwnAccountRequest, res: Response): Promise<Response> => {
-  try {
-    const userId = req.user!.id;
-    const { confirmPassword } = req.body;
+// export const deactivateOwnAccount = async (req: DeactivateOwnAccountRequest, res: Response): Promise<Response> => {
+//   try {
+//     const userId = req.user!.id;
+//     const { confirmPassword } = req.body;
 
-    if (!confirmPassword) {
-      return res.status(400).json({
-        success: false,
-        error: 'Password confirmation is required to deactivate your account'
-      });
-    }
+//     if (!confirmPassword) {
+//       return res.status(400).json({
+//         success: false,
+//         error: 'Password confirmation is required to deactivate your account'
+//       });
+//     }
 
-    const user = await User.findByPk(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: 'User not found'
-      });
-    }
+//     const user = await User.findByPk(userId);
+//     if (!user) {
+//       return res.status(404).json({
+//         success: false,
+//         error: 'User not found'
+//       });
+//     }
 
-    if (!user.isActive) {
-      return res.status(400).json({
-        success: false,
-        error: 'Your account is already deactivated'
-      });
-    }
+//     if (!user.isActive) {
+//       return res.status(400).json({
+//         success: false,
+//         error: 'Your account is already deactivated'
+//       });
+//     }
 
-    if (!user.password) {
-      return res.status(401).json({
-        success: false,
-        error: 'No password set for this account'
-      });
-    }
+//     if (!user.password) {
+//       return res.status(401).json({
+//         success: false,
+//         error: 'No password set for this account'
+//       });
+//     }
 
-    const isPasswordValid = await bcrypt.compare(confirmPassword, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        error: 'Incorrect password. Account deactivation cancelled.'
-      });
-    }
+//     const isPasswordValid = await bcrypt.compare(confirmPassword, user.password);
+//     if (!isPasswordValid) {
+//       return res.status(401).json({
+//         success: false,
+//         error: 'Incorrect password. Account deactivation cancelled.'
+//       });
+//     }
 
-    if (user.role !== 'voter') {
-      return res.status(403).json({
-        success: false,
-        error: 'Only voter accounts can be self-deactivated. Please contact an administrator for assistance.',
-        contactAdmin: true
-      });
-    }
+//     if (user.role !== 'voter') {
+//       return res.status(403).json({
+//         success: false,
+//         error: 'Only voter accounts can be self-deactivated. Please contact an administrator for assistance.',
+//         contactAdmin: true
+//       });
+//     }
 
-    user.isActive = false;
-    await user.save();
+//     user.isActive = false;
+//     await user.save();
 
-    console.log(`User ${user.email} (ID: ${user.id}) self-deactivated their account`);
+//     console.log(`User ${user.email} (ID: ${user.id}) self-deactivated their account`);
 
-    return res.status(200).json({
-      success: true,
-      message: 'Your account has been deactivated successfully. You can reactivate it by registering again with the same email.',
-      data: {
-        deactivatedAt: new Date().toISOString(),
-        reactivationInfo: 'To reactivate your account, simply register again with the same email address and verify your email.'
-      }
-    });
+//     return res.status(200).json({
+//       success: true,
+//       message: 'Your account has been deactivated successfully. You can reactivate it by registering again with the same email.',
+//       data: {
+//         deactivatedAt: new Date().toISOString(),
+//         reactivationInfo: 'To reactivate your account, simply register again with the same email address and verify your email.'
+//       }
+//     });
 
-  } catch (error: any) {
-    console.error('Self-deactivate account error:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Internal server error. Please try again later.'
-    });
-  }
-};
+//   } catch (error: any) {
+//     console.error('Self-deactivate account error:', error);
+//     return res.status(500).json({
+//       success: false,
+//       error: 'Internal server error. Please try again later.'
+//     });
+//   }
+// };
 
 export const getOwnProfile = async (req: GetOwnProfileRequest, res: Response): Promise<Response> => {
   try {
@@ -281,13 +281,13 @@ export const handleGoogleCallback = async (req: Request, res: Response): Promise
         needs_graduation: 'true',
         provider: 'google'
       });
-      res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/setup-account?${setupParams.toString()}`);
+      res.redirect(`${process.env.FRONTEND_URL}/setup-account?${setupParams.toString()}`);
       return;
     }
 
-    res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/auth/callback?token=${token}&provider=google`);
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}&provider=google`);
   } catch (error: any) {
-    res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/login?error=token_generation_failed`);
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=token_generation_failed`);
   }
 };
 
@@ -375,13 +375,13 @@ export const handleMicrosoftCallback = async (req: Request, res: Response): Prom
         needs_graduation: 'true',
         provider: 'microsoft'
       });
-      res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/setup-account?${setupParams.toString()}`);
+      res.redirect(`${process.env.FRONTEND_URL}/setup-account?${setupParams.toString()}`);
       return;
     }
 
-    res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/auth/callback?token=${token}&provider=microsoft`);
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}&provider=microsoft`);
   } catch (error: any) {
-    res.redirect(`${process.env.FRONTEND_URL}:${process.env.FRONT_PORT}/login?error=token_generation_failed`);
+    res.redirect(`${process.env.FRONTEND_URL}/login?error=token_generation_failed`);
   }
 };
 

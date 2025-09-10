@@ -1,0 +1,18 @@
+[Unit]
+Description=Git Poller for BayCanteen Backend
+After=network.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=debian
+WorkingDirectory=/your/project/path
+ExecStart=/your/project/path/git-poll.sh
+Restart=always
+RestartSec=10
+Environment=TZ=Asia/Phnom_Penh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
