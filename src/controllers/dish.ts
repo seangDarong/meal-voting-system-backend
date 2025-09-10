@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
 // import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
+import { fn, col } from 'sequelize';
 import db from '@/models/index';
 import { uploadImageToR2, deleteImageFromR2, File } from '@/utils/r2';
 import { DishAttributes, DishCreationAttributes } from '@/models/dish';
+import Feedback from '@/models/feedback';
+import WishList from '@/models/wishList';
 
 import { AddDishRequest, UpdateDishRequest, DeleteDishRequest, GetDishesByCategoryRequest } from '@/types/requests.js';
 
@@ -160,7 +163,7 @@ export const getAllDishes = async (req: Request, res: Response): Promise<Respons
       ],
       limit,
       offset,
-      order: [['id', 'ASC']]
+      order: [['createdAt', 'DESC']]
     });
 
     // Calculate nextOffset
@@ -254,5 +257,64 @@ export const getDishById = async (req: Request, res: Response): Promise<Response
   } catch (error: any) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error while fetching dish" });
+  }
+};
+
+
+export const getMostRatedDishes = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    const [results] = await db.sequelize.query(`
+      SELECT d.*, COUNT(f.id) AS "ratingCount"
+      FROM "Dishes" d
+      LEFT JOIN "Feedbacks" f ON f."dishId" = d.id
+      GROUP BY d.id
+      ORDER BY "ratingCount" DESC
+      LIMIT :limit OFFSET :offset
+    `, {
+      replacements: { limit, offset },
+      type: db.sequelize.QueryTypes.SELECT
+    });
+
+    return res.status(200).json({
+      message: "Most rated dishes fetched successfully",
+      items: results,
+      total: results.length,
+      nextOffset: offset + limit < results.length ? offset + limit : null,
+    });
+  } catch (error: any) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error while fetching most rated dishes" });
+  }
+};
+
+export const getMostFavoritedDishes = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    const [results] = await db.sequelize.query(`
+      SELECT d.*, COUNT(w.id) AS "favoriteCount"
+      FROM "Dishes" d
+      LEFT JOIN "WishLists" w ON w."dishId" = d.id
+      GROUP BY d.id
+      ORDER BY "favoriteCount" DESC
+      LIMIT :limit OFFSET :offset
+    `, {
+      replacements: { limit, offset },
+      type: db.sequelize.QueryTypes.SELECT
+    });
+
+    return res.status(200).json({
+      message: "Most favorited dishes fetched successfully",
+      items: results,
+      total: results.length,
+      nextOffset: offset + limit < results.length ? offset + limit : null,
+    });
+  } catch (error: any) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error while fetching most favorited dishes" });
   }
 };

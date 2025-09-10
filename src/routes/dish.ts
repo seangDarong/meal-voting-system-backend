@@ -1,5 +1,5 @@
 import express from 'express';
-import {addDish, updateDish, getAllDishes, deleteDish, getAllDishesByCategory, getDishById} from '@/controllers/dish';
+import {addDish, updateDish, getAllDishes, deleteDish, getAllDishesByCategory, getDishById, getMostFavoritedDishes, getMostRatedDishes} from '@/controllers/dish';
 import { authenticateToken } from '@/middlewares/auth';
 import {upload} from '@/middlewares/upload';
 import { authorizeRole } from '@/middlewares/authorizeRole';
@@ -336,6 +336,9 @@ dishRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req, res, nex
  *               $ref: '#/components/schemas/Error'
  */
 dishRouter.get('/category/:categoryId',getAllDishesByCategory);
+
+dishRouter.get('/most-rated', getMostRatedDishes);
+dishRouter.get('/most-favorited', getMostFavoritedDishes);
 
 /**
  * @swagger
