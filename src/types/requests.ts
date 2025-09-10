@@ -223,3 +223,9 @@ export interface DeleteVotePollRequest extends AuthenticatedRequest {
 export interface GetActiveVotePollRequest extends AuthenticatedRequest {
 
 }
+
+export interface GetPendingVotePollRequest extends AuthenticatedRequest {
+  body:{
+    date : string;
+  }
+}

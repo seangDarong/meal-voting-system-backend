@@ -6,7 +6,7 @@ import { CandidateDishAttributes, CandidateDishCreationAttributes } from '@/mode
 import { VoteAttributes } from '@/models/vote';
 import { DishAttributes } from '@/models/dish';
 
-import { SubmitVoteOptionsRequest, GetTodayVoteResultRequest , FinalizeVotePollRequest, GetUpComingMealRequest, GetTodayVotePollRequest, EditVotePollRequest, DeleteVotePollRequest , GetActiveVotePollRequest} from '@/types/requests.js';
+import { SubmitVoteOptionsRequest, GetTodayVoteResultRequest , FinalizeVotePollRequest, GetUpComingMealRequest, GetTodayVotePollRequest, EditVotePollRequest, DeleteVotePollRequest , GetActiveVotePollRequest ,GetPendingVotePollRequest} from '@/types/requests.js';
 import { promises } from 'dns';
 
 const VotePoll = db.VotePoll;
@@ -577,5 +577,90 @@ export const deleteVotePoll = async (req: DeleteVotePollRequest, res: Response):
   } catch (error) {
     console.error('Error deleting vote poll:', error);
     return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+
+export const getPendingVotePoll = async (req: GetPendingVotePollRequest, res: Response): Promise<Response> => {
+  try {
+
+  const { date } = req.query;
+  const inputDate = date ? new Date(date as string) : new Date();
+
+  if (isNaN(inputDate.getTime())) {
+    return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+  }
+
+// Reset time so date comparison works
+  inputDate.setHours(0, 0, 0, 0);
+
+  const nextDate = new Date(inputDate);
+  nextDate.setDate(inputDate.getDate() + 1);
+
+    // Find today's vote poll
+    const poll = await VotePoll.findOne({
+      where: {
+        mealDate: {
+      [Op.gte]: inputDate,
+      [Op.lt]: nextDate,
+    },
+        status: "pending",
+      },
+      include: [
+        {
+          model: CandidateDish,
+          include: [
+            {
+              model: Dish,
+              attributes: { exclude: ["createdAt", "updatedAt"] },
+            },
+          ],
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+        },
+      ],
+      attributes: { exclude: ["createdAt", "updatedAt"] },
+    });
+
+
+
+    if (!poll) {
+      return res.status(404).json({ message: "No pending poll for today." });
+    }
+
+
+    const plainPoll = poll.get({ plain: true }) as any;
+
+    console.log(plainPoll);
+
+    // Count the number of votes for each dish
+    const dishesWithVotes: DishVoteResult[] = await Promise.all(
+      (plainPoll.CandidateDishes ?? []).map(async (cd: any) => {
+        const voteCount = await Vote.count({
+          where: { dishId: cd.dishId, votePollId: cd.votePollId },
+        });
+
+        return {
+          dishId: cd.dishId,
+          name: cd.Dish?.name ?? "Unknown",
+          name_kh: cd.Dish.name_kh,
+          description: cd.Dish.description,
+          description_kh: cd.Dish.description_kh,
+          imageURL : cd.Dish.imageURL,
+          categoryId : cd.Dish.categoryId,
+          voteCount,
+        };
+      })
+    );
+
+    return res.status(200).json({
+      votePollId: plainPoll.id,
+      mealDate: plainPoll.mealDate,
+      voteDate: plainPoll.voteDate,
+      status: plainPoll.status,
+      dishes: dishesWithVotes,
+    });
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: "Internal server error cannot get pending votePoll." });
   }
 };

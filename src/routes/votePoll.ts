@@ -1,9 +1,9 @@
 import express from 'express';
-import {submitVoteOptions , finalizeVotePoll, getTodayVotePoll, editVotePoll, getAllActiveVotePolls , deleteVotePoll } from '@/controllers/votePoll';
+import {submitVoteOptions , finalizeVotePoll, getTodayVotePoll, editVotePoll, getAllActiveVotePolls , deleteVotePoll, getPendingVotePoll } from '@/controllers/votePoll';
 import { authenticateToken } from '@/middlewares/auth';
 import { authorizeRole } from '@/middlewares/authorizeRole';
 
-import { SubmitVoteOptionsRequest, FinalizeVotePollRequest, GetTodayVotePollRequest, EditVotePollRequest ,GetActiveVotePollRequest , DeleteVotePollRequest}  from '@/types/requests';
+import { SubmitVoteOptionsRequest, FinalizeVotePollRequest, GetTodayVotePollRequest, EditVotePollRequest ,GetActiveVotePollRequest , DeleteVotePollRequest, GetPendingVotePollRequest}  from '@/types/requests';
 
 const votePollRouter = express.Router();
 
@@ -334,8 +334,90 @@ votePollRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req,res,n
     deleteVotePoll(req as DeleteVotePollRequest, res).catch(next);
 });
 
+/**
+ * @swagger
+ * /api/polls/pending:
+ *   get:
+ *     summary: Get a pending vote poll by date (defaults to today)
+ *     description: Fetch the pending vote poll for the given date. If no date is provided, today's date is used.
+ *     tags: [VotePoll]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: 2025-09-10
+ *         required: false
+ *         description: The date of the poll (YYYY-MM-DD). Defaults to today if not provided.
+ *     responses:
+ *       200:
+ *         description: Pending vote poll retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 votePollId:
+ *                   type: integer
+ *                   example: 15
+ *                 mealDate:
+ *                   type: string
+ *                   format: date
+ *                   example: 2025-09-11
+ *                 voteDate:
+ *                   type: string
+ *                   format: date
+ *                   example: 2025-09-10
+ *                 status:
+ *                   type: string
+ *                   example: pending
+ *                 dishes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       dishId:
+ *                         type: integer
+ *                         example: 7
+ *                       name:
+ *                         type: string
+ *                         example: "Khor Trey Sambak"
+ *                       name_kh:
+ *                         type: string
+ *                         example: "ខត្រីសំបាក់"
+ *                       description:
+ *                         type: string
+ *                         example: "Traditional Cambodian fish curry with coconut milk."
+ *                       description_kh:
+ *                         type: string
+ *                         example: "ម្ហូបប្រពៃណីខ្មែរ"
+ *                       imageURL:
+ *                         type: string
+ *                         example: "https://example.com/image.jpg"
+ *                       categoryId:
+ *                         type: integer
+ *                         example: 3
+ *                       voteCount:
+ *                         type: integer
+ *                         example: 42
+ *       400:
+ *         description: Invalid date format
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Staff role required
+ *       404:
+ *         description: No pending poll found for the given date
+ *       500:
+ *         description: Internal server error
+ */
 
-
+votePollRouter.get('/pending',authenticateToken,authorizeRole('staff'),(req,res,next) => {
+    getPendingVotePoll(req as GetPendingVotePollRequest, res).catch(next);
+});
 
 
 
