@@ -160,7 +160,7 @@ export const getAllDishes = async (req: Request, res: Response): Promise<Respons
       ],
       limit,
       offset,
-      order: [['id', 'ASC']]
+      order: [['createdAt', 'DESC']]
     });
 
     // Calculate nextOffset
@@ -178,25 +178,41 @@ export const getAllDishes = async (req: Request, res: Response): Promise<Respons
   }
 };
 
-// Get dishes by category
+// Get dishes by category (with pagination)
 export const getAllDishesByCategory = async (req: GetDishesByCategoryRequest, res: Response): Promise<Response> => {
   try {
     const { categoryId } = req.params;
-    if (!categoryId) return res.status(400).json({ error: "Category ID is required" });
+    if (!categoryId) {
+      return res.status(400).json({ error: "Category ID is required" });
+    }
 
-    const dishes = await Dish.findAll({
+    // Parse pagination params
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50); // max 50
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    const { count, rows } = await Dish.findAndCountAll({
       where: { categoryId: parseInt(categoryId) },
       attributes: [
-        'id', 'name', 'name_kh', 'imageURL', 'ingredient', 'ingredient_kh',
-        'description', 'description_kh', 'categoryId'
-      ]
+        "id", "name", "name_kh", "imageURL", "ingredient", "ingredient_kh",
+        "description", "description_kh", "categoryId"
+      ],
+      limit,
+      offset,
+      order: [["createdAt", "DESC"]]
     });
 
-    if (dishes.length === 0) return res.status(404).json({ message: "No dishes found for this category" });
+    // Calculate nextOffset
+    const nextOffset = offset + limit < count ? offset + limit : null;
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "No dishes found for this category" });
+    }
 
     return res.status(200).json({
       message: `Dishes fetched successfully for category ${categoryId}`,
-      data: dishes
+      items: rows,
+      total: count,
+      nextOffset
     });
   } catch (error: any) {
     console.error(error);

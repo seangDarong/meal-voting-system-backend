@@ -290,10 +290,8 @@ dishRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req, res, nex
  * @swagger
  * /api/dishes/category/{categoryId}:
  *   get:
- *     summary: Get all dishes by category 
+ *     summary: Get all dishes by category with pagination
  *     tags: [Dishes]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: categoryId
@@ -301,40 +299,63 @@ dishRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req, res, nex
  *         schema:
  *           type: integer
  *         description: Category ID
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 50
+ *         description: Number of dishes to return (max 50)
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of items to skip
  *     responses:
  *       200:
- *         description: List of dishes in the specified category
+ *         description: List of dishes in the specified category with pagination
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
+ *                 message:
+ *                   type: string
+ *                   example: Dishes fetched successfully for category 2
+ *                 items:
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Dish'
+ *                 total:
+ *                   type: integer
+ *                   description: Total number of dishes in this category
+ *                   example: 42
+ *                 nextOffset:
+ *                   type: integer
+ *                   nullable: true
+ *                   description: Offset for the next page, or null if no more data
+ *                   example: 10
+ *       400:
+ *         description: Invalid category ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
- *         description: Category not found
+ *         description: No dishes found for this category
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       403:
- *         description: Forbidden - Staff role required
+ *       500:
+ *         description: Internal server error while fetching dishes
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+
 dishRouter.get('/category/:categoryId',getAllDishesByCategory);
 
 /**
