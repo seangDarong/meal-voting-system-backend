@@ -330,7 +330,6 @@ export const getTodayVotePoll = async (req: GetTodayVotePollRequest, res: Respon
     const poll = await VotePoll.findOne({
       where: {
         voteDate: { [Op.gte]: today, [Op.lt]: tomorrow },
-        status: { [Op.in]: ["open", "close", "pending"] },
       },
       include: [
         {
