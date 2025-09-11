@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import db from '@/models/index';
-import { CastVoteRequest , UpdateVoteRequest ,GetUserVoteHistoryRequest } from '@/types/requests';
+import { CastVoteRequest , UpdateVoteRequest ,GetUserVoteHistoryRequest ,GetUserVoteTodayRequest} from '@/types/requests';
 
 const VotePoll = db.VotePoll;
 const CandidateDish = db.CandidateDish;
@@ -268,5 +268,59 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
     } catch (error) {
         console.error("getUserVoteHistory error:", error);
         return res.status(500).json({ message: "Internal server error cannot get user vote history" });
+    }
+    };
+
+        export const getUserTodayVote = async (req: GetUserVoteTodayRequest, res: Response) => {
+    try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+
+        // Find today's open poll
+        const poll = await VotePoll.findOne({
+        where: {
+            voteDate: { [Op.gte]: today, [Op.lt]: tomorrow },
+            status: "open",
+        },
+        include: [
+            {
+            model: CandidateDish,
+            include: [
+                { model: Dish, attributes: { exclude: ["createdAt", "updatedAt"] } }
+            ],
+            attributes: { exclude: ["createdAt", "updatedAt"] }
+            }
+        ],
+        attributes: { exclude: ["createdAt", "updatedAt"] },
+        });
+
+        if (!poll) return res.status(404).json({ message: "No open poll today." });
+
+        const plainPoll = poll.get({ plain: true }) as any;
+
+        // Find what the user has voted for
+        const userVote = await Vote.findOne({
+        where: { votePollId: poll.id, userId },
+        include: [{ model: Dish, attributes: ["id", "name", "name_kh"] }]
+        });
+
+        return res.status(200).json({
+        votePollId: poll.id,
+        voteDate: poll.voteDate,
+        userVote: userVote ?? null,
+        candidateDishes: plainPoll.CandidateDishes.map((cd: any) => ({
+            dishId: cd.dishId,
+            name: cd.Dish?.name,
+            name_kh: cd.Dish?.name_kh,
+        }))
+        });
+    } catch (error) {
+        console.error("getUserTodayVote error:", error);
+        return res.status(500).json({ message: "Internal server error cannot get user vote" });
     }
     };
