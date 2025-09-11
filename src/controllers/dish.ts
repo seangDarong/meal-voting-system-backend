@@ -260,18 +260,19 @@ export const getDishById = async (req: Request, res: Response): Promise<Response
   }
 };
 
-
 export const getMostRatedDishes = async (req: Request, res: Response): Promise<Response> => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
     const offset = parseInt(req.query.offset as string) || 0;
 
-    const [results] = await db.sequelize.query(`
-      SELECT d.*, COUNT(f.id) AS "ratingCount"
+    const results = await db.sequelize.query(`
+      SELECT d.*,
+             COALESCE(AVG(f.food), 0) AS "averageRating",
+             COUNT(f.id) AS "ratingCount"
       FROM "Dishes" d
       LEFT JOIN "Feedbacks" f ON f."dishId" = d.id
       GROUP BY d.id
-      ORDER BY "ratingCount" DESC
+      ORDER BY "averageRating" DESC, "ratingCount" DESC
       LIMIT :limit OFFSET :offset
     `, {
       replacements: { limit, offset },
@@ -290,13 +291,15 @@ export const getMostRatedDishes = async (req: Request, res: Response): Promise<R
   }
 };
 
+
+
 export const getMostFavoritedDishes = async (req: Request, res: Response): Promise<Response> => {
   try {
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
     const offset = parseInt(req.query.offset as string) || 0;
 
-    const [results] = await db.sequelize.query(`
-      SELECT d.*, COUNT(w.id) AS "favoriteCount"
+    const results = await db.sequelize.query(`
+      SELECT d.*, COALESCE(COUNT(w.id), 0) AS "favoriteCount"
       FROM "Dishes" d
       LEFT JOIN "WishLists" w ON w."dishId" = d.id
       GROUP BY d.id
