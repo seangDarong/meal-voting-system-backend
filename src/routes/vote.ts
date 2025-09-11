@@ -179,7 +179,11 @@ voteRouter.put('/',authenticateToken,authorizeRole('voter'),(req,res,next) => {
  * /api/votes/history:
  *   get:
  *     summary: Get the user's vote history for a specific date
- *     tags: [Vote]
+ *     description: |
+ *       Fetches the user's voting history for a given date.  
+ *       If no date is provided, today's date is used.
+ *     tags:
+ *       - Vote
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -188,11 +192,12 @@ voteRouter.put('/',authenticateToken,authorizeRole('voter'),(req,res,next) => {
  *         schema:
  *           type: string
  *           format: date
+ *           example: "2025-09-12"
  *         required: false
- *         description: Date for which to fetch vote history (YYYY-MM-DD). Defaults to today if not provided.
+ *         description: Date for which to fetch vote history (YYYY-MM-DD).
  *     responses:
  *       200:
- *         description: User vote history fetched successfully
+ *         description: Successfully retrieved user's vote history
  *         content:
  *           application/json:
  *             schema:
@@ -200,31 +205,79 @@ voteRouter.put('/',authenticateToken,authorizeRole('voter'),(req,res,next) => {
  *               properties:
  *                 votePollId:
  *                   type: integer
- *                   example: 12
+ *                   example: 42
  *                 mealDate:
  *                   type: string
  *                   format: date
- *                   example: "2025-09-11"
+ *                   example: "2025-09-13"
  *                 voteDate:
  *                   type: string
  *                   format: date-time
- *                   example: "2025-09-11T00:00:00.000Z"
+ *                   example: "2025-09-12T00:00:00.000Z"
  *                 userVote:
  *                   type: object
  *                   nullable: true
- *                 selectedDishes:
+ *                   description: User's vote record if available
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 15
+ *                     dishId:
+ *                       type: integer
+ *                       example: 101
+ *                     Dish:
+ *                       type: object
+ *                       description: Dish details
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 101
+ *                         name:
+ *                           type: string
+ *                           example: "Beef Lok Lak"
+ *                 dishes:
  *                   type: array
+ *                   description: Returned only if poll is open or closed (not finalized)
  *                   items:
  *                     type: object
+ *                     properties:
+ *                       candidateDishId:
+ *                         type: integer
+ *                         example: 5
+ *                       dishId:
+ *                         type: integer
+ *                         example: 101
+ *                       dish:
+ *                         type: string
+ *                         example: "Beef Lok Lak"
+ *                       voteCount:
+ *                         type: integer
+ *                         example: 12
+ *                 selectedDishes:
+ *                   type: array
+ *                   description: Returned only if poll is finalized
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 3
+ *                       dishId:
+ *                         type: integer
+ *                         example: 101
+ *                       isSelected:
+ *                         type: boolean
+ *                         example: true
+ *       400:
+ *         description: Invalid date format
  *       401:
- *         description: Unauthorized
+ *         description: Unauthorized (no token or invalid token)
  *       404:
- *         description: No poll found for this date
+ *         description: No poll found for the given date
  *       500:
  *         description: Internal server error
  */
 
-/**
 voteRouter.get('/history',authenticateToken,authorizeRole('voter'),(req,res,next) => {
     getUserVoteHistory(req as GetUserVoteHistoryRequest, res).catch(next);
 })
