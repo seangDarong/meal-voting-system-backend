@@ -169,7 +169,7 @@ export interface UpdateWishRequest extends AuthenticatedRequest {
 export interface RemoveWishRequest extends AuthenticatedRequest {
 }
 
-export interface GetAllWishesRequest extends AuthenticatedRequest {
+export interface GetAllWishesRequest {
   query: {
     page?: string;
     limit?: string;
