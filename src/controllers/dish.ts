@@ -283,8 +283,8 @@ export const getMostRatedDishes = async (req: Request, res: Response): Promise<R
 
     const results = await db.sequelize.query(`
       SELECT d.*,
-             COALESCE(AVG(f.food), 0) AS "averageRating",
-             COUNT(f.id) AS "ratingCount"
+            COALESCE(AVG(f.food), 0) AS "averageRating",
+            COUNT(f.id) AS "ratingCount"
       FROM "Dishes" d
       LEFT JOIN "Feedbacks" f ON f."dishId" = d.id
       GROUP BY d.id
