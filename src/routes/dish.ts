@@ -478,6 +478,7 @@ dishRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req, res, nex
  *               $ref: '#/components/schemas/Error'
  */
 
+
 dishRouter.get('/category/:categoryId',getAllDishesByCategory);
 
 /**
@@ -660,6 +661,10 @@ dishRouter.get('/most-favorited', getMostFavoritedDishes);
  *                   type: string
  *                   example: Internal server error while fetching dish
  */
+
+dishRouter.get('/:id',(req, res, next) => {
+    getDishById(req, res).catch(next);
+});
 
 dishRouter.get('/:id',(req, res, next) => {
     getDishById(req, res).catch(next);
