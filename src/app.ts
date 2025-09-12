@@ -83,8 +83,16 @@ passport.deserializeUser(async (id:any, done) => {
 
 const frontURL = `${process.env.FRONTEND_URL}`;
 console.log('listen from ', frontURL);
-app.use(cors());
+// app.use(cors());
+
+app.use(cors({
+  origin: frontURL,        // allow only your frontend URL
+  credentials: true,       // allow cookies & Authorization headers
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], 
+  allowedHeaders: ["Content-Type", "Authorization"] // allow headers used by frontend
+}));
 app.use(express.json());
+
 
 app.use('/docs', serveSwagger, setupSwagger);
 
