@@ -84,10 +84,12 @@ passport.deserializeUser(async (id:any, done) => {
 const frontURL = `${process.env.FRONTEND_URL}`;
 console.log('listen from ', frontURL);
 
-app.use(cors({
-  origin: frontURL,        // allow only your frontend URL
-  credentials: true,
-}));
+app.use(cors());
+
+// app.use(cors({
+//   origin: frontURL,        // allow only your frontend URL
+//   credentials: true,
+// }));
 
 // app.use(cors({
 //   origin: frontURL,        // allow only your frontend URL
