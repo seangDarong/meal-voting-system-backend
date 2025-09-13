@@ -27,7 +27,7 @@ import voteRoutes from '@/routes/vote';
 
 import feedbackRoutes from '@/routes/feedback';
 import systemFeedbackRoutes from '@/routes/systemFeedback';
-import { globalLimiter } from '@/middlewares/rateLimiter'
+import { globalLimiter } from '@/middlewares/rateLimiter';
 import { authLimiter } from '@/middlewares/rateLimiter';
 dotenv.config();
 
@@ -83,7 +83,11 @@ passport.deserializeUser(async (id:any, done) => {
 
 const frontURL = `${process.env.FRONTEND_URL}`;
 console.log('listen from ', frontURL);
-app.use(cors());
+
+app.use(cors({
+  credentials: true,
+}));
+
 app.use(express.json());
 
 app.use('/docs', serveSwagger, setupSwagger);
@@ -96,7 +100,7 @@ app.use('/api/categories', categoryRoutes)
 app.use('/api/admin', adminRoutes);
 app.use('/api/wishes', wishesRoutes);
 app.use('/api/feedback', feedbackRoutes);
-app.use('/api/system-feedback', systemFeedbackRoutes);
+app.use('/api/system-feedback', globalLimiter, systemFeedbackRoutes);
 
 app.use('/api/user', userRoutes);
 app.use('/auth/microsoft',microsoftRoutes); 
