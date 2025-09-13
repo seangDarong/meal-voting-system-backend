@@ -81,7 +81,7 @@ export const castVote = async (req: CastVoteRequest, res: Response) => {
         // Lock device
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
-        res.cookie("voted_today", todayStr, { httpOnly: true, expires: endOfDay, sameSite: "strict" });
+        res.cookie("voted_today", todayStr, { httpOnly: false, expires: endOfDay, sameSite: "strict" });
 
         return res.status(200).json({
             message: "Vote cast successfully",
