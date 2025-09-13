@@ -181,7 +181,7 @@ router.get('/mine', authenticateToken, (req, res, next) => {
  *                   type: string
  *                   example: "Error details here"
  */
-router.get('/all', authenticateToken,(req, res, next) => {
+router.get('/all', (req, res, next) => {
     getAllWishes(req as GetAllWishesRequest, res).catch(next);
 });
 

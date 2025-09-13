@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
 import db from '@/models/index';
-import { CastVoteRequest , UpdateVoteRequest ,GetUserVoteHistoryRequest } from '@/types/requests';
+import { CastVoteRequest , UpdateVoteRequest ,GetUserVoteHistoryRequest ,GetUserVoteTodayRequest} from '@/types/requests';
 
 const VotePoll = db.VotePoll;
 const CandidateDish = db.CandidateDish;
@@ -177,14 +177,18 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
     export const getUserVoteHistory = async (req: GetUserVoteHistoryRequest, res: Response) => {
     try {
         const userId = req.user?.id;
-        const { date } = req.body;
+
+        // Safely extract and narrow date type
+        const dateParam = req.query.date;
+        const dateString = typeof dateParam === "string" ? dateParam : undefined;
 
         if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
         }
 
         // If no date provided, use today
-        const inputDate = date ? new Date(date) : new Date();
+        const inputDate = dateString ? new Date(dateString) : new Date();
+
         if (isNaN(inputDate.getTime())) {
         return res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
         }
@@ -244,7 +248,7 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
         }
 
         // If poll is open or close, return current vote counts
-        const dishesWithVotes: DishVoteResult[] = await Promise.all(
+        const dishesWithVotes = await Promise.all(
         (plainPoll.CandidateDishes ?? []).map(async (cd: any) => {
             const voteCount = await Vote.count({
             where: { dishId: cd.dishId, votePollId: cd.votePollId },
@@ -267,6 +271,62 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
         });
     } catch (error) {
         console.error("getUserVoteHistory error:", error);
-        return res.status(500).json({ message: "Internal server error cannot get user vote history" });
+        return res.status(500).json({
+        message: "Internal server error cannot get user vote history",
+        });
     }
+    };
+
+    export const getUserTodayVote = async (req: GetUserVoteTodayRequest, res: Response) => {
+        try {
+            const userId = req.user?.id;
+            if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+
+            // Find today's open poll
+            const poll = await VotePoll.findOne({
+            where: {
+                voteDate: { [Op.gte]: today, [Op.lt]: tomorrow },
+                status: "open",
+            },
+            include: [
+                {
+                model: CandidateDish,
+                include: [
+                    { model: Dish, attributes: { exclude: ["createdAt", "updatedAt"] } }
+                ],
+                attributes: { exclude: ["createdAt", "updatedAt"] }
+                }
+            ],
+            attributes: { exclude: ["createdAt", "updatedAt"] },
+            });
+
+            if (!poll) return res.status(404).json({ message: "No open poll today." });
+
+            const plainPoll = poll.get({ plain: true }) as any;
+
+            // Find what the user has voted for
+            const userVote = await Vote.findOne({
+            where: { votePollId: poll.id, userId },
+            include: [{ model: Dish, attributes: ["id", "name", "name_kh"] }]
+            });
+
+            return res.status(200).json({
+            votePollId: poll.id,
+            voteDate: poll.voteDate,
+            userVote: userVote ?? null,
+            candidateDishes: plainPoll.CandidateDishes.map((cd: any) => ({
+                dishId: cd.dishId,
+                name: cd.Dish?.name,
+                name_kh: cd.Dish?.name_kh,
+            }))
+            });
+        } catch (error) {
+            console.error("getUserTodayVote error:", error);
+            return res.status(500).json({ message: "Internal server error cannot get user vote" });
+        }
     };

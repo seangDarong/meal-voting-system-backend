@@ -1,5 +1,5 @@
 import express from 'express';
-import {addDish, updateDish, getAllDishes, deleteDish, getAllDishesByCategory, getDishById} from '@/controllers/dish';
+import {addDish, updateDish, getAllDishes, deleteDish, getAllDishesByCategory, getDishById, getMostFavoritedDishes, getMostRatedDishes} from '@/controllers/dish';
 import { authenticateToken } from '@/middlewares/auth';
 import {upload} from '@/middlewares/upload';
 import { authorizeRole } from '@/middlewares/authorizeRole';
@@ -159,6 +159,100 @@ const dishRouter = express.Router();
 dishRouter.post('/', authenticateToken,authorizeRole('staff'),upload.single('imageFile'),(req, res, next) => {
     addDish(req as AddDishRequest, res).catch(next);
 });
+/**
+ * @swagger
+ * /api/dishes:
+ *   get:
+ *     summary: Get all dishes with pagination
+ *     tags: [Dishes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 50
+ *         description: Number of dishes to return (max 50)
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of items to skip
+ *     responses:
+ *       200:
+ *         description: List of dishes with pagination
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Dishes fetched successfully
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       name:
+ *                         type: string
+ *                       name_kh:
+ *                         type: string
+ *                       imageURL:
+ *                         type: string
+ *                       ingredient:
+ *                         type: string
+ *                       ingredient_kh:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       description_kh:
+ *                         type: string
+ *                       categoryId:
+ *                         type: integer
+ *                       totalWishes:
+ *                         type: integer
+ *                         example: 12
+ *                       averageFoodRating:
+ *                         type: number
+ *                         format: float
+ *                         nullable: true
+ *                         example: 4.25
+ *                 total:
+ *                   type: integer
+ *                   description: Total number of dishes
+ *                   example: 120
+ *                 nextOffset:
+ *                   type: integer
+ *                   nullable: true
+ *                   description: Offset for the next page, or null if no more data
+ *                   example: 10
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Unauthorized
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Internal server error while fetching dishes
+ */
 dishRouter.get('/', getAllDishes);
 
 /**
@@ -290,10 +384,8 @@ dishRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req, res, nex
  * @swagger
  * /api/dishes/category/{categoryId}:
  *   get:
- *     summary: Get all dishes by category 
+ *     summary: Get all dishes by category with pagination, total wishes, and average rating
  *     tags: [Dishes]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: categoryId
@@ -301,47 +393,197 @@ dishRouter.delete('/:id',authenticateToken,authorizeRole('staff'),(req, res, nex
  *         schema:
  *           type: integer
  *         description: Category ID
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 50
+ *         description: Number of dishes to return (max 50)
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of items to skip
  *     responses:
  *       200:
- *         description: List of dishes in the specified category
+ *         description: List of dishes in the specified category with total wishes and average food rating
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
+ *                 message:
+ *                   type: string
+ *                   example: Dishes fetched successfully for category 2
+ *                 items:
  *                   type: array
  *                   items:
- *                     $ref: '#/components/schemas/Dish'
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                       name:
+ *                         type: string
+ *                       name_kh:
+ *                         type: string
+ *                       imageURL:
+ *                         type: string
+ *                       ingredient:
+ *                         type: string
+ *                       ingredient_kh:
+ *                         type: string
+ *                       description:
+ *                         type: string
+ *                       description_kh:
+ *                         type: string
+ *                       categoryId:
+ *                         type: integer
+ *                       totalWishes:
+ *                         type: integer
+ *                         description: Total number of times this dish was wishlisted
+ *                         example: 12
+ *                       averageFoodRating:
+ *                         type: number
+ *                         format: float
+ *                         description: Average rating of this dish (1-5)
+ *                         example: 4.25
+ *                 total:
+ *                   type: integer
+ *                   description: Total number of dishes in this category
+ *                   example: 42
+ *                 nextOffset:
+ *                   type: integer
+ *                   nullable: true
+ *                   description: Offset for the next page, or null if no more data
+ *                   example: 10
+ *       400:
+ *         description: Invalid category ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       404:
- *         description: Category not found
+ *         description: No dishes found for this category
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       403:
- *         description: Forbidden - Staff role required
+ *       500:
+ *         description: Internal server error while fetching dishes
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+
+
 dishRouter.get('/category/:categoryId',getAllDishesByCategory);
+
+/**
+ * @swagger
+ * /api/dishes/most-rated:
+ *   get:
+ *     summary: Get dishes sorted by most ratings
+ *     tags: [Dishes]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 50
+ *         description: Number of dishes to return (max 50)
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of items to skip
+ *     responses:
+ *       200:
+ *         description: List of most rated dishes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Dish'
+ *                 total:
+ *                   type: integer
+ *                 nextOffset:
+ *                   type: integer
+ *                   nullable: true
+ *       500:
+ *         description: Internal server error while fetching most rated dishes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+
+dishRouter.get('/most-rated', getMostRatedDishes);
+
+/**
+ * @swagger
+ * /api/dishes/most-favorited:
+ *   get:
+ *     summary: Get dishes sorted by most favorites
+ *     tags: [Dishes]
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *           maximum: 50
+ *         description: Number of dishes to return (max 50)
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of items to skip
+ *     responses:
+ *       200:
+ *         description: List of most favorited dishes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 items:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Dish'
+ *                 total:
+ *                   type: integer
+ *                 nextOffset:
+ *                   type: integer
+ *                   nullable: true
+ *       500:
+ *         description: Internal server error while fetching most favorited dishes
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+
+dishRouter.get('/most-favorited', getMostFavoritedDishes);
 
 /**
  * @swagger
  * /api/dishes/{id}:
  *   get:
- *     summary: Get a dish by ID
+ *     summary: Get a dish by ID, including wishlist count and average feedback
  *     tags: [Dishes]
  *     parameters:
  *       - in: path
@@ -379,6 +621,15 @@ dishRouter.get('/category/:categoryId',getAllDishesByCategory);
  *                       type: string
  *                     categoryId:
  *                       type: integer
+ *                     totalWishes:
+ *                       type: integer
+ *                       description: Total number of times this dish has been added to wishlists
+ *                       example: 12
+ *                     averageFoodRating:
+ *                       type: number
+ *                       format: float
+ *                       description: Average food rating from feedback (1-5)
+ *                       example: 4.25
  *       400:
  *         description: Invalid dish ID
  *         content:
@@ -410,6 +661,11 @@ dishRouter.get('/category/:categoryId',getAllDishesByCategory);
  *                   type: string
  *                   example: Internal server error while fetching dish
  */
+
+dishRouter.get('/:id',(req, res, next) => {
+    getDishById(req, res).catch(next);
+});
+
 dishRouter.get('/:id',(req, res, next) => {
     getDishById(req, res).catch(next);
 });

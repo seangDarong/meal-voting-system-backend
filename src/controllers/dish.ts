@@ -1,9 +1,12 @@
 import { Request, Response } from 'express';
 // import { v4 as uuidv4 } from 'uuid';
 import { Op } from 'sequelize';
+import { fn, col } from 'sequelize';
 import db from '@/models/index';
 import { uploadImageToR2, deleteImageFromR2, File } from '@/utils/r2';
 import { DishAttributes, DishCreationAttributes } from '@/models/dish';
+import Feedback from '@/models/feedback';
+import WishList from '@/models/wishList';
 
 import { AddDishRequest, UpdateDishRequest, DeleteDishRequest, GetDishesByCategoryRequest } from '@/types/requests.js';
 
@@ -146,29 +149,57 @@ export const updateDish = async (req: UpdateDishRequest, res: Response): Promise
   }
 };
 
-// Get all dishes
 export const getAllDishes = async (req: Request, res: Response): Promise<Response> => {
   try {
-    // Parse pagination params
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50); // max 50
     const offset = parseInt(req.query.offset as string) || 0;
 
+    const totalWishesLiteral = db.sequelize.literal(
+      `(SELECT COUNT(*) FROM "WishLists" WHERE "WishLists"."dishId" = "Dish"."id")`
+    );
+
+    const averageFeedbackLiteral = db.sequelize.literal(
+      `(SELECT ROUND(AVG("food")::numeric, 2) FROM "Feedbacks" WHERE "Feedbacks"."dishId" = "Dish"."id")`
+    );
+
     const { count, rows } = await Dish.findAndCountAll({
       attributes: [
-        'id', 'name', 'name_kh', 'imageURL', 'ingredient', 'ingredient_kh',
-        'description', 'description_kh', 'categoryId'
+        'id',
+        'name',
+        'name_kh',
+        'imageURL',
+        'ingredient',
+        'ingredient_kh',
+        'description',
+        'description_kh',
+        'categoryId',
+        [totalWishesLiteral, 'totalWishes'],
+        [averageFeedbackLiteral, 'averageFoodRating']
       ],
       limit,
       offset,
-      order: [['id', 'ASC']]
+      order: [['createdAt', 'DESC']]
     });
 
-    // Calculate nextOffset
+    const items = rows.map(row => ({
+      id: row.get('id'),
+      name: row.get('name'),
+      name_kh: row.get('name_kh'),
+      imageURL: row.get('imageURL'),
+      ingredient: row.get('ingredient'),
+      ingredient_kh: row.get('ingredient_kh'),
+      description: row.get('description'),
+      description_kh: row.get('description_kh'),
+      categoryId: row.get('categoryId'),
+      totalWishes: parseInt(String(row.get('totalWishes') ?? '0'), 10),
+      averageFoodRating: parseFloat(String(row.get('averageFoodRating') ?? '0'))
+    }));
+
     const nextOffset = offset + limit < count ? offset + limit : null;
 
     return res.status(200).json({
       message: "Dishes fetched successfully",
-      items: rows,
+      items,
       total: count,
       nextOffset
     });
@@ -178,31 +209,82 @@ export const getAllDishes = async (req: Request, res: Response): Promise<Respons
   }
 };
 
-// Get dishes by category
+
+
+// Get dishes by category (with pagination + totalWishes + averageFoodRating)
 export const getAllDishesByCategory = async (req: GetDishesByCategoryRequest, res: Response): Promise<Response> => {
   try {
     const { categoryId } = req.params;
-    if (!categoryId) return res.status(400).json({ error: "Category ID is required" });
+    if (!categoryId) {
+      return res.status(400).json({ error: "Category ID is required" });
+    }
 
-    const dishes = await Dish.findAll({
-      where: { categoryId: parseInt(categoryId) },
+    // Parse pagination params
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50); // max 50
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    // Subqueries for totalWishes and averageFoodRating
+    const totalWishesLiteral = db.sequelize.literal(
+      '(SELECT COUNT(*) FROM "WishLists" WHERE "WishLists"."dishId" = "Dish"."id")'
+    );
+
+    const averageRatingLiteral = db.sequelize.literal(
+      '(SELECT ROUND(AVG("food")::numeric, 2) FROM "Feedbacks" WHERE "Feedbacks"."dishId" = "Dish"."id")'
+    );
+
+    const { count, rows } = await Dish.findAndCountAll({
+      where: { categoryId: parseInt(categoryId, 10) },
       attributes: [
-        'id', 'name', 'name_kh', 'imageURL', 'ingredient', 'ingredient_kh',
-        'description', 'description_kh', 'categoryId'
-      ]
+        "id",
+        "name",
+        "name_kh",
+        "imageURL",
+        "ingredient",
+        "ingredient_kh",
+        "description",
+        "description_kh",
+        "categoryId",
+        [totalWishesLiteral, "totalWishes"],
+        [averageRatingLiteral, "averageFoodRating"]
+      ],
+      limit,
+      offset,
+      order: [["createdAt", "DESC"]]
     });
 
-    if (dishes.length === 0) return res.status(404).json({ message: "No dishes found for this category" });
+    const nextOffset = offset + limit < count ? offset + limit : null;
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "No dishes found for this category" });
+    }
+
+    // Map rows
+    const items = rows.map(row => ({
+      id: row.get("id"),
+      name: row.get("name"),
+      name_kh: row.get("name_kh"),
+      imageURL: row.get("imageURL"),
+      ingredient: row.get("ingredient"),
+      ingredient_kh: row.get("ingredient_kh"),
+      description: row.get("description"),
+      description_kh: row.get("description_kh"),
+      categoryId: row.get("categoryId"),
+      totalWishes: parseInt(String(row.get("totalWishes") ?? "0"), 10),
+      averageFoodRating: parseFloat(String(row.get("averageFoodRating") ?? "0"))
+    }));
 
     return res.status(200).json({
       message: `Dishes fetched successfully for category ${categoryId}`,
-      data: dishes
+      items,
+      total: count,
+      nextOffset
     });
   } catch (error: any) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error while fetching dishes" });
   }
 };
+
 
 // Delete a dish
 export const deleteDish = async (req: DeleteDishRequest, res: Response): Promise<Response> => {
@@ -239,20 +321,114 @@ export const getDishById = async (req: Request, res: Response): Promise<Response
       return res.status(400).json({ error: "Invalid dish ID" });
     }
 
+    // Use a subquery for totalWishes and averageFoodRating
+    const totalWishesLiteral = db.sequelize.literal(
+      `(SELECT COUNT(*) FROM "WishLists" WHERE "WishLists"."dishId" = "Dish"."id")`
+    );
+
+    const averageFeedbackLiteral = db.sequelize.literal(
+      `(SELECT ROUND(AVG("food")::numeric, 2) FROM "Feedbacks" WHERE "Feedbacks"."dishId" = "Dish"."id")`
+    );
+
+    // Fetch dish with aggregates
     const dish = await Dish.findByPk(dishId, {
       attributes: [
-        'id', 'name', 'name_kh', 'imageURL', 'ingredient', 'ingredient_kh',
-        'description', 'description_kh', 'categoryId'
-      ]
+        "id",
+        "name",
+        "name_kh",
+        "imageURL",
+        "ingredient",
+        "ingredient_kh",
+        "description",
+        "description_kh",
+        "categoryId",
+        [totalWishesLiteral, "totalWishes"],
+        [averageFeedbackLiteral, "averageFoodRating"]
+      ],
     });
 
     if (!dish) {
       return res.status(404).json({ error: "Dish not found" });
     }
 
-    return res.status(200).json({ dish });
+    return res.status(200).json({
+      dish: {
+        ...dish.toJSON(),
+        totalWishes: parseInt(String(dish.get("totalWishes") ?? "0"), 10),
+        averageFoodRating: parseFloat(String(dish.get("averageFoodRating") ?? "0"))
+      },
+    });
   } catch (error: any) {
     console.error(error);
-    return res.status(500).json({ error: "Internal server error while fetching dish" });
+    return res
+      .status(500)
+      .json({ error: "Internal server error while fetching dish" });
+  }
+};
+
+
+export const getMostRatedDishes = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    const results = await db.sequelize.query(`
+      SELECT d.*,
+             COALESCE(AVG(f.food), 0) AS "averageRating",
+             COUNT(f.id) AS "ratingCount",
+             COUNT(w.id) AS "wishCount"
+      FROM "Dishes" d
+      LEFT JOIN "Feedbacks" f ON f."dishId" = d.id
+      LEFT JOIN "WishLists" w ON w."dishId" = d.id
+      GROUP BY d.id
+      ORDER BY "averageRating" DESC, "ratingCount" DESC, "wishCount" DESC
+      LIMIT :limit OFFSET :offset
+    `, {
+      replacements: { limit, offset },
+      type: db.sequelize.QueryTypes.SELECT
+    });
+
+    return res.status(200).json({
+      message: "Most rated dishes fetched successfully",
+      items: results,
+      total: results.length,
+      nextOffset: offset + limit < results.length ? offset + limit : null,
+    });
+  } catch (error: any) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error while fetching most rated dishes" });
+  }
+};
+
+export const getMostFavoritedDishes = async (req: Request, res: Response): Promise<Response> => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    const results = await db.sequelize.query(`
+      SELECT d.*,
+             COALESCE(AVG(f.food), 0) AS "averageRating",
+             COUNT(f.id) AS "ratingCount",
+             COUNT(w.id) AS "wishCount"
+      FROM "Dishes" d
+      LEFT JOIN "Feedbacks" f ON f."dishId" = d.id
+      LEFT JOIN "WishLists" w ON w."dishId" = d.id
+      GROUP BY d.id
+      ORDER BY "wishCount" DESC, "averageRating" DESC, "ratingCount" DESC
+      LIMIT :limit OFFSET :offset
+    `, {
+      replacements: { limit, offset },
+      type: db.sequelize.QueryTypes.SELECT
+    });
+
+    return res.status(200).json({
+      message: "Most favorited dishes fetched successfully",
+      items: results,
+      total: results.length,
+      nextOffset: offset + limit < results.length ? offset + limit : null,
+    });
+  } catch (error: any) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error while fetching most favorited dishes" });
   }
 };
