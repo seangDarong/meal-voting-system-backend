@@ -215,7 +215,7 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
             include: [
                 {
                 model: Dish,
-                attributes: { exclude: ["createdAt", "updatedAt", "userId"] },
+                attributes: { exclude: [ "userId","createdAt", "updatedAt"] },
                 },
             ],
             attributes: { exclude: ["createdAt", "updatedAt"] },
@@ -278,6 +278,7 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
         votePollId: plainPoll.id,
         mealDate: plainPoll.mealDate,
         voteDate: plainPoll.voteDate,
+        status: plainPoll.status,
         userVote: userVote ?? null,
         dishes: dishesWithVotes,
         });
