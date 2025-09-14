@@ -32,6 +32,24 @@ import { authLimiter } from '@/middlewares/rateLimiter';
 dotenv.config();
 
 const app = express();
+const frontURL = `${process.env.FRONTEND_URL}`;
+const allowedOrigins = [frontURL, "http://localhost:5173"].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // allow tools like Postman/curl
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked request from: ${origin}`);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },        // allow only your frontend URL
+  credentials: true,       // allow cookies & Authorization headers
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], 
+  allowedHeaders: ["Content-Type", "Authorization"] // allow headers used by frontend
+}));
 app.use(cookieParser());
 
 
@@ -81,26 +99,8 @@ passport.deserializeUser(async (id:any, done) => {
     }
 });
 
-const frontURL = `${process.env.FRONTEND_URL}`;
+
 console.log('listen from ', frontURL);
-
-const allowedOrigins = [frontURL, "http://localhost:5173"].filter(Boolean);
-
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // allow tools like Postman/curl
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`CORS blocked request from: ${origin}`);
-      callback(new Error("Not allowed by CORS"));
-    }
-  },        // allow only your frontend URL
-  credentials: true,       // allow cookies & Authorization headers
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], 
-  allowedHeaders: ["Content-Type", "Authorization"] // allow headers used by frontend
-}));
 
 
 app.use(express.json());
