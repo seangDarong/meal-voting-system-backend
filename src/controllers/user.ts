@@ -396,7 +396,7 @@ export const setupGraduationDate = async (req: SetupGraduationDateRequest, res: 
     }
 
     // If user chooses to skip, do not set expectedGraduationDate
-    if (skip === true) {
+    if (skip) {
       user.expectedGraduationDate = null;
       await user.save();
       return res.json({
