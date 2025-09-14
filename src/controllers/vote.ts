@@ -238,8 +238,7 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
             model: Dish,
             attributes: { exclude: ["createdAt", "updatedAt"] },
             },
-        ],
-        attributes: { exclude: ["createdAt", "updatedAt"] },
+        ]
         });
 
         // If poll is finalized, return finalized format
