@@ -33,23 +33,22 @@ dotenv.config();
 
 const app = express();
 const frontURL = `${process.env.FRONTEND_URL}`;
-// const allowedOrigins = [frontURL, "http://localhost:5173"].filter(Boolean);
+const allowedOrigins = [frontURL, "http://localhost:5173"].filter(Boolean);
 
 app.use(cors({
-  // origin: (origin, callback) => {
-  //   if (!origin) return callback(null, true); // allow tools like Postman/curl
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // allow tools like Postman/curl
 
-  //   if (allowedOrigins.includes(origin)) {
-  //     callback(null, true);
-  //   } else {
-  //     console.warn(`CORS blocked request from: ${origin}`);
-  //     callback(new Error("Not allowed by CORS"));
-  //   }
-  // },        // allow only your frontend URL
-  origin : "*",
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked request from: ${origin}`);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },       
   credentials: true,       // allow cookies & Authorization headers
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], 
-  allowedHeaders: ["Content-Type", "Authorization"] // allow headers used by frontend
+  allowedHeaders: ["Content-Type", "Authorization", "cache-control"] // allow headers used by frontend
 }));
 app.use(cookieParser());
 
