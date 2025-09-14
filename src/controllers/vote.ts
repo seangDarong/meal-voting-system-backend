@@ -247,6 +247,7 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
             votePollId: plainPoll.id,
             mealDate: plainPoll.mealDate,
             voteDate: plainPoll.voteDate,
+            status : plainPoll.status,
             userVote: userVote ?? null,
             selectedDishes: plainPoll.CandidateDishes.filter((cd: any) => cd.isSelected),
         });
@@ -262,6 +263,8 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
             dishId: cd.dishId,
             name: cd.Dish?.name ?? "Unknown",
             name_kh: cd.Dish.name_kh,
+            ingredient: cd.Dish.ingredient,
+            ingredients_kh: cd.Dish.ingredient_kh,
             description: cd.Dish.description,
             description_kh: cd.Dish.description_kh,
             imageURL : cd.Dish.imageURL,
