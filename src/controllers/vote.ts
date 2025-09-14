@@ -215,7 +215,7 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
             include: [
                 {
                 model: Dish,
-                attributes: { exclude: ["createdAt", "updatedAt"] },
+                attributes: { exclude: ["createdAt", "updatedAt", "userId"] },
                 },
             ],
             attributes: { exclude: ["createdAt", "updatedAt"] },
