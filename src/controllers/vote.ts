@@ -86,6 +86,7 @@ export const castVote = async (req: CastVoteRequest, res: Response) => {
             expires: endOfDay, 
             sameSite: "none",
             secure: true,
+            partitioned: true
         });
 
         return res.status(200).json({
