@@ -387,7 +387,7 @@ export const handleMicrosoftCallback = async (req: Request, res: Response): Prom
 
 export const setupGraduationDate = async (req: SetupGraduationDateRequest, res: Response): Promise<Response> => {
   try {
-    const { generation } = req.body;
+    const { generation, skip } = req.body;
     const userId = req.user!.id;
 
     const user = await User.findByPk(userId);
@@ -395,28 +395,47 @@ export const setupGraduationDate = async (req: SetupGraduationDateRequest, res: 
       return res.status(404).json({ error: 'User not found' });
     }
 
-    if (!generation) {
-      return res.status(400).json({ error: 'Generation number is required' });
+    // If user chooses to skip, do not set expectedGraduationDate
+    if (skip === true) {
+      user.expectedGraduationDate = null;
+      await user.save();
+      return res.json({
+        message: 'Graduation date skipped successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          expectedGraduationDate: null,
+          graduationSkipped: true
+        }
+      });
     }
 
-    const generationNumber = validateGeneration(generation);
-    const expectedGraduationDate = calculateGraduationDate(generationNumber);
+    // If generation is provided, set expectedGraduationDate
+    if (generation) {
+      const generationNumber = validateGeneration(generation);
+      const expectedGraduationDate = calculateGraduationDate(generationNumber);
 
-    user.expectedGraduationDate = expectedGraduationDate;
-    await user.save();
+      user.expectedGraduationDate = expectedGraduationDate;
+      await user.save();
 
-    return res.json({
-      message: 'Graduation date set successfully',
-      user: {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-        expectedGraduationDate: {
-          month: expectedGraduationDate.getMonth() + 1,
-          year: expectedGraduationDate.getFullYear()
+      return res.json({
+        message: 'Graduation date set successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          expectedGraduationDate: {
+            month: expectedGraduationDate.getMonth() + 1,
+            year: expectedGraduationDate.getFullYear()
+          },
+          graduationSkipped: false
         }
-      }
-    });
+      });
+    }
+
+    // If neither is provided, return an error
+    return res.status(400).json({ error: 'Generation number is required unless skipping.' });
 
   } catch (error: any) {
     console.error('Setup graduation date error:', error);

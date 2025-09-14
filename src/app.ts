@@ -85,7 +85,7 @@ const frontURL = `${process.env.FRONTEND_URL}`;
 console.log('listen from ', frontURL);
 
 app.use(cors({
-  // origin: frontURL,        // allow only your frontend URL
+  origin: "*",        // allow only your frontend URL
   credentials: true,       // allow cookies & Authorization headers
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"], 
   allowedHeaders: ["Content-Type", "Authorization"] // allow headers used by frontend
