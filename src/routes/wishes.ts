@@ -265,6 +265,69 @@ router.put('/', authenticateToken,(req, res, next) => {
     updateWish(req as UpdateWishRequest, res).catch(next);
 });
 
+/**
+ * @swagger
+ * /api/wishes:
+ *   delete:
+ *     summary: Remove current user's wish
+ *     description: >
+ *       Removes the current user's wish.  
+ *       If a cooldown period applies, the request will be rejected until the cooldown expires.
+ *     tags: [Wishes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Wish successfully removed
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Wish removed"
+ *       403:
+ *         description: Cooldown active — user must wait before removing again
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Cooldown active"
+ *                 cooldownRemaining:
+ *                   type: integer
+ *                   description: Seconds remaining before the cooldown expires
+ *                   example: 25
+ *       404:
+ *         description: Wish not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Wish not found"
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Server error"
+ *                 error:
+ *                   type: string
+ *                   example: "Database connection failed"
+ */
+
 router.delete('/', authenticateToken,(req, res, next) => {
     removeWish(req as RemoveWishRequest, res).catch(next);
 });
