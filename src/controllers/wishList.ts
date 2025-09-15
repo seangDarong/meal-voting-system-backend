@@ -105,7 +105,7 @@ export const updateWish = async (req: UpdateWishRequest, res: Response): Promise
     }
 
     wish.dishId = dishId;
-    wish.lastModified = now;
+    wish.lastModified = null;
     await wish.save();
 
     return res.json({ message: 'Wish updated', dishId });
@@ -135,7 +135,7 @@ export const removeWish = async (req: RemoveWishRequest, res: Response): Promise
     }
 
     wish.dishId = null;
-    wish.lastModified = now;
+    wish.lastModified = null;
     await wish.save();
 
     return res.json({ message: 'Wish removed' });
