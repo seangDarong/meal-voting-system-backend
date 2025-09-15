@@ -94,15 +94,15 @@ export const updateWish = async (req: UpdateWishRequest, res: Response): Promise
     const lastUpdate = wish.lastModified;
     
     // Only check cooldown if lastModified exists (not null)
-    if (lastUpdate) {
-      const secondsSince = (now.getTime() - lastUpdate.getTime()) / 1000;
-      if (secondsSince < COOLDOWN_SECONDS) {
-        return res.status(403).json({
-          message: 'Cooldown active',
-          cooldownRemaining: Math.ceil(COOLDOWN_SECONDS - secondsSince)
-        });
-      }
-    }
+    // if (lastUpdate) {
+    //   const secondsSince = (now.getTime() - lastUpdate.getTime()) / 1000;
+    //   if (secondsSince < COOLDOWN_SECONDS) {
+    //     return res.status(403).json({
+    //       message: 'Cooldown active',
+    //       cooldownRemaining: Math.ceil(COOLDOWN_SECONDS - secondsSince)
+    //     });
+    //   }
+    // }
 
     wish.dishId = dishId;
     wish.lastModified = null;
@@ -124,15 +124,15 @@ export const removeWish = async (req: RemoveWishRequest, res: Response): Promise
     const lastUpdate = wish.lastModified;
 
     // Only check cooldown if lastModified exists (not null)
-    if (lastUpdate) {
-      const secondsSince = (now.getTime() - lastUpdate.getTime()) / 1000;
-      if (secondsSince < COOLDOWN_SECONDS) {
-        return res.status(403).json({
-          message: 'Cooldown active',
-          cooldownRemaining: Math.ceil(COOLDOWN_SECONDS - secondsSince)
-        });
-      }
-    }
+    // if (lastUpdate) {
+    //   const secondsSince = (now.getTime() - lastUpdate.getTime()) / 1000;
+    //   if (secondsSince < COOLDOWN_SECONDS) {
+    //     return res.status(403).json({
+    //       message: 'Cooldown active',
+    //       cooldownRemaining: Math.ceil(COOLDOWN_SECONDS - secondsSince)
+    //     });
+    //   }
+    // }
 
     wish.dishId = null;
     wish.lastModified = null;
