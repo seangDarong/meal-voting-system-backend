@@ -225,8 +225,17 @@ export const updateVote = async (req: UpdateVoteRequest, res: Response) => {
         });
 
         if (!poll) {
-        return res.status(404).json({ message: "No poll found for this date." });
-        }
+        return res.status(200).json({
+            votePollId: null,
+            mealDate: null,
+            voteDate: inputDate,
+            status: null,
+            userVote: null,
+            dishes: [],
+            selectedDishes: []
+        });
+
+    }
 
         const plainPoll = poll.get({ plain: true }) as any;
 
